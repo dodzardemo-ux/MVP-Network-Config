@@ -14,9 +14,9 @@ import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard } fro
 function NetworkConfigContent() {
   return (
     <Tabs defaultValue="dashboard" className="h-full flex flex-col">
-      {/* Eskom-aligned brand bar: blue-to-green gradient, white logo, italic tagline */}
-      <div className="bg-gradient-to-r from-[#00499b] via-[#1a7fb5] to-[#43a935] px-6 py-3">
-        <div className="flex items-center justify-between gap-4">
+      {/* Eskom-aligned brand bar: blue-to-green gradient, white logo, italic tagline, embedded nav */}
+      <div className="bg-gradient-to-r from-[#00499b] via-[#1a7fb5] to-[#43a935]">
+        <div className="flex items-center justify-between gap-4 px-6 pt-3">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -33,36 +33,27 @@ function NetworkConfigContent() {
             Redefining for a <span className="font-bold not-italic">better future.</span>
           </p>
         </div>
-      </div>
 
-      {/* Navigation row */}
-      <div className="border-b px-6 py-2 bg-background">
-        <div className="flex items-center justify-end">
-          <TabsList>
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="configure" className="flex items-center gap-2">
-              <Network className="h-4 w-4" />
-              Configure Network
-            </TabsTrigger>
-            <TabsTrigger value="mapping" className="flex items-center gap-2">
-              <Waypoints className="h-4 w-4" />
-              Network Mapping
-            </TabsTrigger>
-            <TabsTrigger value="calculate" className="flex items-center gap-2">
-              <Calculator className="h-4 w-4" />
-              Calculate Losses
-            </TabsTrigger>
-            <TabsTrigger value="cdu" className="flex items-center gap-2">
-              <Gauge className="h-4 w-4" />
-              CDU Allocation
-            </TabsTrigger>
-            <TabsTrigger value="results" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              View Results
-            </TabsTrigger>
+        {/* Navigation row embedded in the gradient */}
+        <div className="px-6">
+          <TabsList className="h-auto justify-start gap-1 rounded-none bg-transparent p-0">
+            {[
+              { value: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+              { value: "configure", label: "Configure Network", Icon: Network },
+              { value: "mapping", label: "Network Mapping", Icon: Waypoints },
+              { value: "calculate", label: "Calculate Losses", Icon: Calculator },
+              { value: "cdu", label: "CDU Allocation", Icon: Gauge },
+              { value: "results", label: "View Results", Icon: BarChart3 },
+            ].map(({ value, label, Icon }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex items-center gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 font-medium text-white/80 shadow-none transition-colors hover:border-white hover:text-white data-[state=active]:border-white data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:shadow-none"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
       </div>
