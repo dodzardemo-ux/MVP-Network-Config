@@ -6,8 +6,9 @@ import { DetailsPanel } from "@/components/network/details-panel";
 import { CalculationPanel } from "@/components/network/calculation-panel";
 import { LossDashboard } from "@/components/network/loss-dashboard";
 import { CDUAllocationPanel } from "@/components/network/cdu-allocation-panel";
+import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Calculator, BarChart3, Gauge } from "lucide-react";
+import { Network, Calculator, BarChart3, Gauge, Waypoints } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
@@ -24,6 +25,10 @@ function NetworkConfigContent() {
             <TabsTrigger value="configure" className="flex items-center gap-2">
               <Network className="h-4 w-4" />
               Configure Network
+            </TabsTrigger>
+            <TabsTrigger value="mapping" className="flex items-center gap-2">
+              <Waypoints className="h-4 w-4" />
+              Network Mapping
             </TabsTrigger>
             <TabsTrigger value="calculate" className="flex items-center gap-2">
               <Calculator className="h-4 w-4" />
@@ -50,6 +55,10 @@ function NetworkConfigContent() {
             <DetailsPanel />
           </div>
         </div>
+      </TabsContent>
+
+      <TabsContent value="mapping" className="flex-1 m-0 p-6 overflow-hidden">
+        <NetworkMappingCanvas />
       </TabsContent>
 
       <TabsContent value="calculate" className="flex-1 m-0 p-6 overflow-auto">
