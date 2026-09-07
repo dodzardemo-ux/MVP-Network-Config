@@ -159,10 +159,7 @@ export function DashboardPanel() {
                   <MapPin className="h-5 w-5 text-primary" />
                   Gauteng Non-Technical Loss Heat Map
                 </CardTitle>
-                <CardDescription>
-                  Loss intensity by district. Click a district to inspect it. Sample data
-                  covers Gauteng; national coverage will follow.
-                </CardDescription>
+                <CardDescription>Click a district to inspect it.</CardDescription>
               </div>
             </div>
           </CardHeader>

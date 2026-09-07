@@ -128,6 +128,12 @@ export function GautengLossMap({
         {geoData.features.map((f) => {
           const [cx, cy] = labelFor(f);
           if (Number.isNaN(cx) || Number.isNaN(cy)) return null;
+          const { zone } = f.properties;
+          const loss = zone ? lossByZone.get(zone) : undefined;
+          const fill = lossColor(loss ? loss.ntlPercent : null, thresholds);
+          // On the red (critical) fill, use white text with a black outline for
+          // legibility; every other fill keeps black text with a white outline.
+          const isCritical = fill === COLOR_CRITICAL;
           return (
             <text
               key={`label-${f.properties.name}`}
@@ -139,9 +145,9 @@ export function GautengLossMap({
               style={{
                 fontSize: 10,
                 fontWeight: 600,
-                fill: "#1f2937",
+                fill: isCritical ? "#ffffff" : "#1f2937",
                 paintOrder: "stroke",
-                stroke: "rgba(255,255,255,0.85)",
+                stroke: isCritical ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.85)",
                 strokeWidth: 2.5,
                 strokeLinejoin: "round",
               }}
