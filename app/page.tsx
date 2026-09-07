@@ -7,12 +7,13 @@ import { CalculationPanel } from "@/components/network/calculation-panel";
 import { LossDashboard } from "@/components/network/loss-dashboard";
 import { CDUAllocationPanel } from "@/components/network/cdu-allocation-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
+import { DashboardPanel } from "@/components/network/dashboard-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Calculator, BarChart3, Gauge, Waypoints } from "lucide-react";
+import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
-    <Tabs defaultValue="configure" className="h-full flex flex-col">
+    <Tabs defaultValue="dashboard" className="h-full flex flex-col">
       <div className="border-b px-6 py-4 bg-background">
         <div className="flex items-center justify-between">
           <div>
@@ -22,6 +23,10 @@ function NetworkConfigContent() {
             </p>
           </div>
           <TabsList>
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="configure" className="flex items-center gap-2">
               <Network className="h-4 w-4" />
               Configure Network
@@ -45,6 +50,10 @@ function NetworkConfigContent() {
           </TabsList>
         </div>
       </div>
+
+      <TabsContent value="dashboard" className="flex-1 m-0 p-6 overflow-auto">
+        <DashboardPanel />
+      </TabsContent>
 
       <TabsContent value="configure" className="flex-1 m-0 overflow-hidden">
         <div className="flex h-full">

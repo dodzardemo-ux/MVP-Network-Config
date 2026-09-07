@@ -123,3 +123,58 @@ Status: ⛔ none addressed by the current prototype — these are design/hosting
 3. **BI universe ownership:** does Eskom build/own the BI feeds, or is that in the service provider's scope?
 4. **Existing system parity:** which reports/heat maps/charts must be like-for-like vs enhanced?
 5. **Data volumes & retention:** national scale (all OUs) drives the architecture, RTO/RPO, and DR design.
+
+---
+
+## 9. Prioritized to-do list (scored against the TEC evaluation template)
+
+Priority and weight are taken from the **FBM Technical Evaluation Criteria (TEC)** template
+(`FBM_TEC_Template...xlsx`). `Priority` tiers: **Show stopper (6) > Critical (5) > Very important (4) >
+Important (3)**. `Weight` is each item's maximum contribution to the total desktop score. Items are
+ordered by evaluation impact, showstoppers first (a zero on a showstopper can disqualify the bid).
+
+### Tier 0 — Showstoppers (must be demonstrable or the bid can be excluded)
+
+| # | To-do | TEC ref | Priority | Weight | Build status |
+|---|-------|---------|----------|--------|--------------|
+| 1 | Automated **source-system data import & consolidation** into one BI universe (Oracle + SQL); demonstrable live | Demo #1 / Functional #1,#7,#9 | Show stopper | 4.84% (demo) + 1.67%×2 | Not started |
+| 2 | **Report extracts** with user access to source data files (the 28 specified extracts) | Functional #11 | Show stopper | 1.67% | Not started |
+| 3 | **Publish balanced results** to corporate DB/BI warehouse + shared folder + meter statuses | Functional #16 | Show stopper | 1.67% | Not started |
+| 4 | **Store monthly data & mapping** (network config + mapping, PP/CDU allocation, ≥48 months history, time-stamped) | Functional #18 | Show stopper | 1.67% | Partial — mapping is live in-memory only; no persistence/versioning |
+| 5 | **Upgrade local database** to SQL Server / MySQL / PostgreSQL | Functional #21 | Show stopper | 1.67% | Not started (app is in-memory) |
+| 6 | **FBM data validation module** (continuous, rule-based non-conformance detection + routing) | Functional #23 | Show stopper | 1.67% | Not started |
+| 7 | **Performance NFRs**: 1s save / 3s retrieve per record; availability, throughput (SPR1,5,7,9,14,16,17) | Non-Functional #1,5,7,9,14,16,17 | Show stopper | 0.79% each (~5.6%) | Not started (needs backend) |
+| 8 | **Referenceability** — 3+ verifiable customer reference letters (utility/enterprise context) | Key Req #1 | Show stopper | 5.22% | Vendor/bid-team action, not a build item |
+
+### Tier 1 — Critical
+
+| # | To-do | TEC ref | Priority | Weight | Build status |
+|---|-------|---------|----------|--------|--------------|
+| 9 | **Heat maps / dashboard** — losses with adjustable conditional formatting, per feeder & OU hierarchy | Functional #14 (BR12) | Reporting | 1.39% band | **Done (this iteration)** — Gauteng dashboard heat map + adjustable thresholds |
+| 10 | **KPI results consolidated nationally** with drill-down Cluster/OU/Zone/Sector/CNC/Meter | Functional #17 (BR15) | Critical | 1.39% | Partial — drill-down exists on sample data; national consolidation + RBAC pending |
+| 11 | **Stats meter readings via online Oracle DB** | Functional #20 (RQ) | Critical | 1.39% | Not started |
+| 12 | **CNL data mapping & validation module** with graphical non-conformance overview | Functional #22 (RQ) | Critical | 1.39% | Not started |
+| 13 | Cloud service model **PaaS** + integration with notification/auth (LDAP/AD), support model | Cloud #1 / NFR #25,26 | Critical | ~1.9% | Not started |
+| 14 | Security attestations: **SOC 2 Type II, ISO 27001** (plus architecture controls) | Security #1,2 | Critical | ~1.0% | Vendor/platform action |
+
+### Tier 2 — Very important
+
+| # | To-do | TEC ref | Priority | Weight |
+|---|-------|---------|----------|--------|
+| 15 | **Balancing bar/line charts** per OU hierarchy (delivered vs used, NTL kWh/%), historical + Power BI custom | Functional #15 (BR13) | Very important | 1.11% — **partially done** (zone bar charts live; historical/Power BI pending) |
+| 16 | **Data mining** across source systems | Functional #2 | Very important | 1.11% |
+| 17 | Meter status flagging, feeder business levels, cross-OU substation sharing, Dx/MTS balancing | Functional #24–33 (RQ) | Very important/Critical | 1.11–1.39% each |
+| 18 | Availability, scalability, backup/archiving, users, training, PM methodology, DR/BCP | Non-Functional #19–27 | Very important+ | 0.4–0.79% each |
+
+### Tier 3 — Important / supporting
+
+| # | To-do | TEC ref | Priority | Weight |
+|---|-------|---------|----------|--------|
+| 19 | Additional report extracts & upload validations | Functional #6,#13 | Important | 0.83% each |
+| 20 | Device management: automate stats readings + log WOs to maintenance system | Functional #19 (BR17) | Very important | 1.11% |
+
+**Reading the scores:** the single biggest line items are **Referenceability (5.22%)** and the
+**live data-import demonstration (4.84%)** — both are bid/demo activities rather than app features, so
+they should be owned by the bid team early. Of the *buildable* showstoppers, the **data platform**
+(import → validate → persist on SQL/Oracle with performance SLAs) carries the most combined weight and
+is the critical path; the reporting/heat-map layer (now started) sits on top of it.
