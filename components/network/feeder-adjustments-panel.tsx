@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { 
   Settings2, 
   Zap, 
@@ -15,9 +16,10 @@ import {
   TrendingDown,
   RotateCcw,
   Check,
-  Percent
+  Percent,
+  Gauge
 } from "lucide-react"
-import { energyDeliveredMap, getCustomerConsumptionForFeeder } from "@/lib/data/energy-data"
+import { energyDeliveredMap, getCustomerConsumptionForFeeder, getCDUAllocationForFeeder } from "@/lib/data/energy-data"
 
 interface FeederAdjustmentsPanelProps {
   feederId: string
@@ -29,22 +31,27 @@ export function FeederAdjustmentsPanel({ feederId, feederName }: FeederAdjustmen
     state, 
     setFeederTechLoss, 
     clearFeederOverride, 
-    adjustKwh 
+    adjustKwh,
+    toggleCDU
   } = useNetwork()
 
   // Get current values
   const baseEnergyDelivered = energyDeliveredMap.get(feederId) || 0
   const baseCustomerSales = getCustomerConsumptionForFeeder(feederId)
+  const baseCDU = getCDUAllocationForFeeder(feederId)
   
   // Get current adjustments from state
   const currentDeliveredAdj = state.kwhAdjustments.get(`${feederId}-delivered`) || 0
   const currentSalesAdj = state.kwhAdjustments.get(`${feederId}-sales`) || 0
+  const currentCDUAdj = state.kwhAdjustments.get(`${feederId}-cdu`) || 0
   const currentTechLossOverride = state.feederOverrides.get(feederId)
   const hasOverride = currentTechLossOverride !== undefined
+  const cduEnabled = state.includeCDU
 
   // Local state for input fields
   const [deliveredAdjustment, setDeliveredAdjustment] = useState(currentDeliveredAdj.toString())
   const [salesAdjustment, setSalesAdjustment] = useState(currentSalesAdj.toString())
+  const [cduAdjustment, setCduAdjustment] = useState(currentCDUAdj.toString())
   const [techLossPercent, setTechLossPercent] = useState(
     hasOverride ? currentTechLossOverride.toString() : state.globalTechnicalLossPercent.toString()
   )
@@ -53,10 +60,19 @@ export function FeederAdjustmentsPanel({ feederId, feederName }: FeederAdjustmen
   useEffect(() => {
     setDeliveredAdjustment(currentDeliveredAdj.toString())
     setSalesAdjustment(currentSalesAdj.toString())
+    setCduAdjustment(currentCDUAdj.toString())
     setTechLossPercent(
       hasOverride ? currentTechLossOverride!.toString() : state.globalTechnicalLossPercent.toString()
     )
-  }, [feederId, currentDeliveredAdj, currentSalesAdj, currentTechLossOverride, hasOverride, state.globalTechnicalLossPercent])
+  }, [feederId, currentDeliveredAdj, currentSalesAdj, currentCDUAdj, currentTechLossOverride, hasOverride, state.globalTechnicalLossPercent])
+
+  // Effective CDU mapped to this feeder (base allocation + adjustment), only when enabled
+  const effectiveCDU = cduEnabled ? baseCDU + (parseFloat(cduAdjustment) || 0) : 0
+
+  const handleApplyCDUAdjustment = () => {
+    const value = parseFloat(cduAdjustment) || 0
+    adjustKwh(feederId, 'cdu', value)
+  }
 
   // Calculated values with adjustments
   const adjustedDelivered = baseEnergyDelivered + (parseFloat(deliveredAdjustment) || 0)
@@ -85,9 +101,11 @@ export function FeederAdjustmentsPanel({ feederId, feederName }: FeederAdjustmen
   const handleResetAllAdjustments = () => {
     adjustKwh(feederId, 'delivered', 0)
     adjustKwh(feederId, 'sales', 0)
+    adjustKwh(feederId, 'cdu', 0)
     clearFeederOverride(feederId)
     setDeliveredAdjustment('0')
     setSalesAdjustment('0')
+    setCduAdjustment('0')
     setTechLossPercent(state.globalTechnicalLossPercent.toString())
   }
 
@@ -280,8 +298,84 @@ export function FeederAdjustmentsPanel({ feederId, feederName }: FeederAdjustmen
           </div>
         </div>
 
+        <Separator />
+
+        {/* CDU Mapping */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-purple-500" />
+            <span className="text-sm font-medium">CDU Mapping</span>
+          </div>
+
+          <div className="rounded-lg border p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-sm">Include CDU in customer sales</Label>
+                <p className="text-xs text-muted-foreground">
+                  Maps unallocated prepaid sales (CDU) to this feeder
+                </p>
+              </div>
+              <Switch
+                checked={cduEnabled}
+                onCheckedChange={(checked) => toggleCDU(checked)}
+                aria-label="Toggle CDU mapping"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Mapped CDU</Label>
+              <Badge variant="outline" className="text-xs">
+                Base: {(baseCDU / 1000).toFixed(1)} MWh
+              </Badge>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  value={cduAdjustment}
+                  onChange={(e) => setCduAdjustment(e.target.value)}
+                  placeholder="CDU adjustment in kWh"
+                  className="text-sm"
+                  disabled={!cduEnabled}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {!cduEnabled ? (
+                    'CDU mapping is disabled for calculations'
+                  ) : parseFloat(cduAdjustment) > 0 ? (
+                    <span className="text-green-600 flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3" />
+                      +{parseFloat(cduAdjustment).toLocaleString()} kWh
+                    </span>
+                  ) : parseFloat(cduAdjustment) < 0 ? (
+                    <span className="text-red-600 flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
+                      {parseFloat(cduAdjustment).toLocaleString()} kWh
+                    </span>
+                  ) : (
+                    'Adjust the CDU mapped to this feeder'
+                  )}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={handleApplyCDUAdjustment}
+                disabled={!cduEnabled || parseFloat(cduAdjustment) === currentCDUAdj}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {cduEnabled && (
+              <div className="text-xs text-purple-600">
+                Effective CDU: {(effectiveCDU / 1000).toFixed(1)} MWh added to customer sales
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Summary of Active Adjustments */}
-        {(currentDeliveredAdj !== 0 || currentSalesAdj !== 0 || hasOverride) && (
+        {(currentDeliveredAdj !== 0 || currentSalesAdj !== 0 || currentCDUAdj !== 0 || hasOverride) && (
           <>
             <Separator />
             <div className="rounded-lg bg-muted/50 p-3 space-y-2">
@@ -295,6 +389,11 @@ export function FeederAdjustmentsPanel({ feederId, feederName }: FeederAdjustmen
                 {currentSalesAdj !== 0 && (
                   <Badge variant="outline" className="text-xs">
                     Sales: {currentSalesAdj > 0 ? '+' : ''}{(currentSalesAdj / 1000).toFixed(1)} MWh
+                  </Badge>
+                )}
+                {currentCDUAdj !== 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    CDU: {currentCDUAdj > 0 ? '+' : ''}{(currentCDUAdj / 1000).toFixed(1)} MWh
                   </Badge>
                 )}
                 {hasOverride && (

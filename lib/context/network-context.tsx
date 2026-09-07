@@ -1,13 +1,28 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
-import type { NetworkNode, NetworkAction, LossCalculation } from '@/lib/types/network';
+import type { NetworkNode, NetworkAction, LossCalculation, NodeType } from '@/lib/types/network';
 import { allNodes, nodeMap as initialNodeMap, getChildren } from '@/lib/data/network-data';
 import { 
   getFullLossHierarchy, 
   calculateLossForNode,
   type CalculationConfig 
 } from '@/lib/calculations/loss-calculator';
+
+// Walk up the parent chain to find the nearest ancestor of a given type.
+// Used to enforce "same substation" move/cluster rules on the mapping canvas.
+function findAncestorOfType(
+  nodes: Map<string, NetworkNode>,
+  nodeId: string,
+  type: NodeType,
+): string | null {
+  let current: NetworkNode | undefined = nodes.get(nodeId);
+  while (current) {
+    if (current.type === type) return current.id;
+    current = current.parentId ? nodes.get(current.parentId) : undefined;
+  }
+  return null;
+}
 
 interface NetworkState {
   nodes: Map<string, NetworkNode>;
@@ -98,13 +113,20 @@ function networkReducer(state: NetworkState, action: Action): NetworkState {
 
       const newNodes = new Map(state.nodes);
 
+      // Members can cluster across different transformers/feeders as long as they
+      // live under the same substation (mirrors the drag-and-drop move rules).
+      const draggedSubstation = findAncestorOfType(state.nodes, action.draggedId, 'substation');
+      const targetSubstation = findAncestorOfType(state.nodes, action.targetId, 'substation');
+      const sameSubstation =
+        draggedSubstation !== null && draggedSubstation === targetSubstation;
+
       // Case 1: target is already a cluster of the same member type -> add dragged into it
       if (target.type === 'cluster') {
         const targetCluster = target as Extract<NetworkNode, { type: 'cluster' }>;
         if (
           !clusterableTypes.includes(dragged.type) ||
           targetCluster.memberType !== dragged.type ||
-          dragged.parentId !== targetCluster.parentId
+          !sameSubstation
         ) {
           return state;
         }
@@ -112,11 +134,11 @@ function networkReducer(state: NetworkState, action: Action): NetworkState {
         return { ...state, nodes: newNodes, selectedNodeId: targetCluster.id };
       }
 
-      // Case 2: dragged onto a same-type sibling sharing the same parent -> create new cluster
+      // Case 2: dragged onto a same-type sibling in the same substation -> create new cluster
       if (
         !clusterableTypes.includes(dragged.type) ||
         dragged.type !== target.type ||
-        dragged.parentId !== target.parentId ||
+        !sameSubstation ||
         !target.parentId
       ) {
         return state;
@@ -225,6 +247,7 @@ interface NetworkContextValue {
   getNode: (nodeId: string) => NetworkNode | undefined;
   getChildNodes: (parentId: string) => NetworkNode[];
   getSelectedNode: () => NetworkNode | undefined;
+  getAncestorOfType: (nodeId: string, type: NodeType) => string | null;
 }
 
 const NetworkContext = createContext<NetworkContextValue | null>(null);
@@ -305,6 +328,10 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     return state.selectedNodeId ? state.nodes.get(state.selectedNodeId) : undefined;
   }, [state.selectedNodeId, state.nodes]);
 
+  const getAncestorOfType = useCallback((nodeId: string, type: NodeType) => {
+    return findAncestorOfType(state.nodes, nodeId, type);
+  }, [state.nodes]);
+
   const value = useMemo(() => ({
     state,
     selectNode,
@@ -322,6 +349,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     getNode,
     getChildNodes,
     getSelectedNode,
+    getAncestorOfType,
   }), [
     state,
     selectNode,
@@ -339,6 +367,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     getNode,
     getChildNodes,
     getSelectedNode,
+    getAncestorOfType,
   ]);
 
   return (
