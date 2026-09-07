@@ -149,7 +149,7 @@ export function DetailsPanel() {
   const hierarchyEnergyData = useMemo(() => {
     if (!selectedNode || selectedNode.type === 'meter') return null
     
-    // Helper to get all descendants of a certain type
+    // Standard subtree traversal by parentId.
     const getDescendants = (nodeId: string, targetType?: string): NetworkNode[] => {
       const descendants: NetworkNode[] = []
       const traverse = (id: string) => {
@@ -166,62 +166,128 @@ export function DetailsPanel() {
       return descendants
     }
 
-    // Get all feeders under this node (feeders have energy delivered data)
-    const descendantFeeders = selectedNode.type === 'feeder' 
-      ? [selectedNode] 
-      : getDescendants(selectedNode.id, 'feeder')
-    
-    // Sum energy delivered from all feeders (including kWh adjustments)
-    let energyDelivered = 0
-    for (const feeder of descendantFeeders) {
-      const baseEnergy = energyDeliveredMap.get(feeder.id) || 0
-      const adjustment = state.kwhAdjustments.get(`${feeder.id}-delivered`) || 0
-      energyDelivered += baseEnergy + adjustment
-    }
-    
-    // Get all meters and sum their consumption
-    const allMeters = selectedNode.type === 'transformer'
-      ? Array.from(state.nodes.values()).filter(n => n.type === 'meter' && n.parentId === selectedNode.id)
-      : getDescendants(selectedNode.id, 'meter')
-    
-    let customerSales = (allMeters as Meter[]).reduce((sum, m) => sum + m.kwh, 0)
-    
-    // Add sales adjustments from feeders
-    for (const feeder of descendantFeeders) {
-      const salesAdj = state.kwhAdjustments.get(`${feeder.id}-sales`) || 0
-      customerSales += salesAdj
-    }
-    
-    // For transformers, we need to calculate proportional energy delivered from parent feeder
-    if (selectedNode.type === 'transformer') {
-      const parentFeeder = state.nodes.get(selectedNode.parentId || '')
-      if (parentFeeder && parentFeeder.type === 'feeder') {
-        const baseFeederEnergy = energyDeliveredMap.get(parentFeeder.id) || 0
-        const feederAdj = state.kwhAdjustments.get(`${parentFeeder.id}-delivered`) || 0
-        const feederEnergy = baseFeederEnergy + feederAdj
-        // Get all meters under the same feeder
-        const allFeederMeters = getDescendants(parentFeeder.id, 'meter') as Meter[]
-        const totalFeederConsumption = allFeederMeters.reduce((sum, m) => sum + m.kwh, 0)
-        // Proportional allocation
-        const meterConsumption = (allMeters as Meter[]).reduce((sum, m) => sum + m.kwh, 0)
-        energyDelivered = totalFeederConsumption > 0 
-          ? Math.round(feederEnergy * (meterConsumption / totalFeederConsumption))
-          : 0
-        customerSales = meterConsumption
+    // Cluster-aware descendant collection: for a cluster node we explicitly
+    // iterate its direct members and collect each member's subtree, so a
+    // clustered group aggregates exactly the nodes that were clustered together.
+    const getEffectiveDescendants = (node: NetworkNode, targetType?: string): NetworkNode[] => {
+      if (node.type === 'cluster') {
+        const results: NetworkNode[] = []
+        const members = Array.from(state.nodes.values()).filter((n) => n.parentId === node.id)
+        for (const member of members) {
+          if (!targetType || member.type === targetType) results.push(member)
+          results.push(...getDescendants(member.id, targetType))
+        }
+        return results
       }
+      return getDescendants(node.id, targetType)
     }
-    
+
+    // Energy delivered + customer sales for a single node, resolved by its role.
+    const nodeEnergy = (node: NetworkNode): { energyDelivered: number; customerSales: number } => {
+      // Feeder: carries delivered energy directly; sales = its meters + sales adjustment.
+      if (node.type === 'feeder') {
+        const base = energyDeliveredMap.get(node.id) || 0
+        const deliveredAdj = state.kwhAdjustments.get(`${node.id}-delivered`) || 0
+        const salesAdj = state.kwhAdjustments.get(`${node.id}-sales`) || 0
+        const meters = getDescendants(node.id, 'meter') as Meter[]
+        return {
+          energyDelivered: base + deliveredAdj,
+          customerSales: meters.reduce((sum, m) => sum + m.kwh, 0) + salesAdj,
+        }
+      }
+
+      // Transformer: proportional share of its parent feeder's delivered energy.
+      if (node.type === 'transformer') {
+        const parentFeeder = state.nodes.get(node.parentId || '')
+        const myMeters = getDescendants(node.id, 'meter') as Meter[]
+        const myConsumption = myMeters.reduce((sum, m) => sum + m.kwh, 0)
+        if (parentFeeder && parentFeeder.type === 'feeder') {
+          const base = energyDeliveredMap.get(parentFeeder.id) || 0
+          const deliveredAdj = state.kwhAdjustments.get(`${parentFeeder.id}-delivered`) || 0
+          const feederEnergy = base + deliveredAdj
+          const feederMeters = getDescendants(parentFeeder.id, 'meter') as Meter[]
+          const feederConsumption = feederMeters.reduce((sum, m) => sum + m.kwh, 0)
+          return {
+            energyDelivered: feederConsumption > 0
+              ? Math.round(feederEnergy * (myConsumption / feederConsumption))
+              : 0,
+            customerSales: myConsumption,
+          }
+        }
+        return { energyDelivered: 0, customerSales: myConsumption }
+      }
+
+      // Individual meter: proportional share of its owning feeder's delivered energy.
+      if (node.type === 'meter') {
+        const meter = node as Meter
+        // The owner is normally the transformer, but a clustered meter's parent
+        // is the cluster, whose parent is the transformer.
+        let owner = state.nodes.get(meter.parentId || '')
+        if (owner && owner.type === 'cluster') owner = state.nodes.get(owner.parentId || '')
+        const feeder = owner ? state.nodes.get(owner.parentId || '') : null
+        if (feeder && feeder.type === 'feeder') {
+          const base = energyDeliveredMap.get(feeder.id) || 0
+          const deliveredAdj = state.kwhAdjustments.get(`${feeder.id}-delivered`) || 0
+          const feederEnergy = base + deliveredAdj
+          const feederMeters = getDescendants(feeder.id, 'meter') as Meter[]
+          const feederConsumption = feederMeters.reduce((sum, m) => sum + m.kwh, 0)
+          return {
+            energyDelivered: feederConsumption > 0
+              ? Math.round(feederEnergy * (meter.kwh / feederConsumption))
+              : 0,
+            customerSales: meter.kwh,
+          }
+        }
+        return { energyDelivered: 0, customerSales: meter.kwh }
+      }
+
+      // Cluster: sum each member's contribution individually so the total stays
+      // accurate whether the cluster groups feeders or meters.
+      if (node.type === 'cluster') {
+        const members = Array.from(state.nodes.values()).filter((n) => n.parentId === node.id)
+        return members.reduce(
+          (acc, member) => {
+            const energy = nodeEnergy(member)
+            return {
+              energyDelivered: acc.energyDelivered + energy.energyDelivered,
+              customerSales: acc.customerSales + energy.customerSales,
+            }
+          },
+          { energyDelivered: 0, customerSales: 0 },
+        )
+      }
+
+      // Hierarchy level (OU..substation): sum delivered energy from every
+      // descendant feeder and sales from every descendant meter (cluster
+      // members included via getEffectiveDescendants).
+      const feeders = getEffectiveDescendants(node, 'feeder')
+      let energyDelivered = 0
+      let customerSales = 0
+      for (const feeder of feeders) {
+        const base = energyDeliveredMap.get(feeder.id) || 0
+        const deliveredAdj = state.kwhAdjustments.get(`${feeder.id}-delivered`) || 0
+        const salesAdj = state.kwhAdjustments.get(`${feeder.id}-sales`) || 0
+        energyDelivered += base + deliveredAdj
+        customerSales += salesAdj
+      }
+      const meters = getEffectiveDescendants(node, 'meter') as Meter[]
+      customerSales += meters.reduce((sum, m) => sum + m.kwh, 0)
+      return { energyDelivered, customerSales }
+    }
+
+    const { energyDelivered, customerSales } = nodeEnergy(selectedNode)
+
     if (energyDelivered === 0 && customerSales === 0) return null
-    
+
     // Get technical loss % (use feeder override if this is a single feeder, otherwise global)
     const technicalLossPercent = selectedNode.type === 'feeder' && state.feederOverrides.has(selectedNode.id)
       ? state.feederOverrides.get(selectedNode.id)!
       : state.globalTechnicalLossPercent
-    
+
     const technicalLoss = Math.round(energyDelivered * (technicalLossPercent / 100))
     const nonTechnicalLoss = energyDelivered - customerSales - technicalLoss
     const nonTechnicalLossPercent = energyDelivered > 0 ? (nonTechnicalLoss / energyDelivered) * 100 : 0
-    
+
     return {
       energyDelivered,
       customerSales,
