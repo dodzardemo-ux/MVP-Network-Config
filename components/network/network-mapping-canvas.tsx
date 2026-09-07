@@ -92,10 +92,10 @@ export function NetworkMappingCanvas() {
       const cl = target as Cluster;
       return dragged.type === cl.memberType && sameSubstation(draggedId, targetId);
     }
-    // Cluster two same-type siblings (meters or feeders) within the same substation.
+    // Cluster two same-type siblings (meters, transformers, or feeders) within the same substation.
     if (
       dragged.type === target.type &&
-      (dragged.type === 'meter' || dragged.type === 'feeder') &&
+      (dragged.type === 'meter' || dragged.type === 'feeder' || dragged.type === 'transformer') &&
       sameSubstation(draggedId, targetId)
     ) {
       return true;
@@ -205,7 +205,12 @@ export function NetworkMappingCanvas() {
         {node.type === 'cluster' && (
           <div className="flex items-center justify-between gap-2">
             <Badge variant="secondary" className="text-[10px]">
-              {memberCount} {(node as Cluster).memberType === 'meter' ? 'meters' : 'feeders'}
+              {memberCount}{' '}
+              {(node as Cluster).memberType === 'meter'
+                ? 'meters'
+                : (node as Cluster).memberType === 'transformer'
+                  ? 'transformers'
+                  : 'feeders'}
             </Badge>
             <button
               onClick={(e) => {
@@ -303,9 +308,9 @@ export function NetworkMappingCanvas() {
         <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
         <span className="text-pretty">
           Drag a card onto another to reorganize the network. Meters move to any transformer in the same
-          substation; transformers move to any feeder in the same substation. Drop a meter onto another meter
-          (or a feeder onto another feeder) in the same substation to group them into a cluster. Click a card to
-          select it.
+          substation; transformers move to any feeder in the same substation. Drop a meter onto another meter,
+          a transformer onto another transformer, or a feeder onto another feeder in the same substation to
+          group them into a cluster. Click a card to select it.
         </span>
       </div>
 

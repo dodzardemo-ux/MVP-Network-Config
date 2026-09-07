@@ -107,9 +107,9 @@ function networkReducer(state: NetworkState, action: Action): NetworkState {
       const target = state.nodes.get(action.targetId);
       if (!dragged || !target || action.draggedId === action.targetId) return state;
 
-      // Only meters and feeders can be clustered
-      const clusterableTypes = ['meter', 'feeder'];
-      const draggedMemberType = dragged.type as 'meter' | 'feeder';
+      // Meters, transformers, and feeders can be clustered (same substation)
+      const clusterableTypes = ['meter', 'feeder', 'transformer'];
+      const draggedMemberType = dragged.type as 'meter' | 'feeder' | 'transformer';
 
       const newNodes = new Map(state.nodes);
 
@@ -146,7 +146,12 @@ function networkReducer(state: NetworkState, action: Action): NetworkState {
 
       const sharedParentId = target.parentId;
       const clusterId = `cluster-${draggedMemberType}-${action.targetId}-${Date.now()}`;
-      const memberLabel = draggedMemberType === 'meter' ? 'Meter' : 'Feeder';
+      const memberLabel =
+        draggedMemberType === 'meter'
+          ? 'Meter'
+          : draggedMemberType === 'transformer'
+            ? 'Transformer'
+            : 'Feeder';
 
       const clusterNode = {
         id: clusterId,
