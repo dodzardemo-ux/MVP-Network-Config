@@ -14,20 +14,30 @@ import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard } fro
 function NetworkConfigContent() {
   return (
     <Tabs defaultValue="dashboard" className="h-full flex flex-col">
-      <div className="border-b px-6 py-4 bg-background">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Eskom-aligned brand bar: blue-to-green gradient, white logo, italic tagline */}
+      <div className="bg-gradient-to-r from-[#00499b] via-[#1a7fb5] to-[#43a935] px-6 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/eskom-logo.svg"
+              src="/brand/eskom-logo-white.gif"
               alt="Eskom — Powering your world"
-              className="h-9 w-auto"
+              className="h-8 w-auto"
             />
-            <div className="h-9 w-px bg-gold/70" aria-hidden="true" />
-            <span className="font-brand text-3xl font-bold tracking-tight text-primary">
-              FBM
+            <div className="h-7 w-px bg-white/40" aria-hidden="true" />
+            <span className="font-brand text-lg font-semibold text-white">
+              Feeder Balancing Module
             </span>
           </div>
+          <p className="hidden font-serif text-lg italic text-white md:block">
+            Redefining for a <span className="font-bold not-italic">better future.</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Navigation row */}
+      <div className="border-b px-6 py-2 bg-background">
+        <div className="flex items-center justify-end">
           <TabsList>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <LayoutDashboard className="h-4 w-4" />
