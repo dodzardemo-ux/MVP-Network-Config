@@ -9,7 +9,7 @@ import { CDUAllocationPanel } from "@/components/network/cdu-allocation-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
 import { DashboardPanel } from "@/components/network/dashboard-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard } from "lucide-react";
+import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard, FileText, FileType2 } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
@@ -29,9 +29,32 @@ function NetworkConfigContent() {
               Feeder Balancing Module
             </span>
           </div>
-          <p className="hidden font-serif text-lg italic text-white md:block">
-            Redefining for a <span className="font-bold not-italic">better future.</span>
-          </p>
+          <div className="flex items-center gap-4">
+            <div className="hidden items-center gap-2 lg:flex" aria-label="Download tender submission">
+              <span className="text-xs font-medium uppercase tracking-wide text-white/70">
+                Tender submission
+              </span>
+              <a
+                href="/downloads/T2-Technologies-FBM-Tender-Submission.pdf"
+                download
+                className="flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/25"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                PDF
+              </a>
+              <a
+                href="/downloads/T2-Technologies-FBM-Tender-Submission.docx"
+                download
+                className="flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/25"
+              >
+                <FileType2 className="h-3.5 w-3.5" />
+                Word
+              </a>
+            </div>
+            <p className="hidden font-serif text-lg italic text-white md:block">
+              Redefining for a <span className="font-bold not-italic">better future.</span>
+            </p>
+          </div>
         </div>
 
         {/* Navigation row embedded in the gradient */}
