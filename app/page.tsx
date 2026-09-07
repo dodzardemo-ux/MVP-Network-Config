@@ -16,11 +16,17 @@ function NetworkConfigContent() {
     <Tabs defaultValue="dashboard" className="h-full flex flex-col">
       <div className="border-b px-6 py-4 bg-background">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Feeder Balancing Module</h1>
-            <p className="text-muted-foreground">
-              Configure network topology, calculate and analyze distribution losses
-            </p>
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/eskom-logo.svg"
+              alt="Eskom — Powering your world"
+              className="h-9 w-auto"
+            />
+            <div className="h-9 w-px bg-gold/70" aria-hidden="true" />
+            <span className="font-brand text-3xl font-bold tracking-tight text-primary">
+              FBM
+            </span>
           </div>
           <TabsList>
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
