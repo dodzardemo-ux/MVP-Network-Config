@@ -70,10 +70,11 @@ export interface Meter extends BaseNode {
 
 // Cluster - a grouping container created by dragging one same-type node onto another.
 // A meter-cluster lives under a transformer and groups meters.
+// A transformer-cluster lives under a feeder and groups transformers.
 // A feeder-cluster lives under a substation and groups feeders.
 export interface Cluster extends BaseNode {
   type: 'cluster';
-  memberType: 'meter' | 'feeder'; // The type of nodes this cluster groups
+  memberType: 'meter' | 'feeder' | 'transformer'; // The type of nodes this cluster groups
 }
 
 export type NetworkNode = 

@@ -59,9 +59,11 @@ export function calculateFeederLoss(
   const salesAdjustment = config.kwhAdjustments.get(`${feederId}-sales`) ?? 0;
   customerSales += salesAdjustment;
   
-  // Add CDU allocation if enabled
+  // Add CDU allocation if enabled (base mapping + any per-feeder CDU adjustment)
   if (config.includeCDU) {
     customerSales += getCDUAllocationForFeeder(feederId);
+    const cduAdjustment = config.kwhAdjustments.get(`${feederId}-cdu`) ?? 0;
+    customerSales += cduAdjustment;
   }
 
   // Get technical loss percentage (override or global)
