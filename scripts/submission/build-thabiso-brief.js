@@ -14,9 +14,30 @@ const fs = require("fs");
 const path = require("path");
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
-  Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
+  Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, ImageRun,
 } = require("docx");
 const PDFDocument = require("pdfkit");
+const { buildAll } = require("./diagrams");
+
+// Rasterised diagrams (id -> { buffer, width, height, title }) and helpers to
+// resolve either a diagram or a live-application screenshot into an embeddable
+// image with a caption.
+const diagrams = buildAll();
+const ASSET_DIR = path.join(__dirname, "assets");
+function pngSize(buf) { return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }; }
+function loadShot(file) {
+  const buffer = fs.readFileSync(path.join(ASSET_DIR, file));
+  const { width, height } = pngSize(buffer);
+  return { buffer, width, height };
+}
+function resolveFigure(fig) {
+  if (fig.kind === "diagram") {
+    const d = diagrams[fig.id];
+    return { buffer: d.buffer, width: d.width, height: d.height, caption: fig.caption || d.title, isShot: false };
+  }
+  const s = loadShot(fig.file);
+  return { buffer: s.buffer, width: s.width, height: s.height, caption: fig.caption, isShot: true };
+}
 
 const BRAND = { blue: "004898", gold: "A39273", dark: "1F2937", grey: "6B7280", light: "F3F4F6" };
 const TENDER = { enquiry: "3239CXMWP", title: "Feeder Balancing Module (FBM) Tool", owner: "Thabiso" };
@@ -58,6 +79,32 @@ const sections = [
           "Platform Layer: runtime environments, containers/virtual infrastructure, network controls, secrets, backup and recovery.",
           "Operations Layer: CI/CD, monitoring, logging, alerting, vulnerability management, service management and audit reporting.",
         ],
+        figures: [{ kind: "diagram", id: "logical-architecture" }],
+      },
+      {
+        title: "5.2 Reference Deployment and Data Flow",
+        intro: [
+          "The module is designed for a resilient, cloud-ready deployment. Traffic is terminated at a managed edge, routed to stateless application services behind a private network boundary, and backed by managed data and integration stores. The data-flow view shows how metered readings move through import, validation and balancing into the decisions and actions the tool surfaces.",
+        ],
+        figures: [
+          { kind: "diagram", id: "deployment-architecture" },
+          { kind: "diagram", id: "data-flow" },
+        ],
+      },
+      {
+        title: "5.3 Application Configuration Workflows",
+        intro: [
+          "The following workflows explain how the tool is operated day to day — behaviour that cannot be conveyed by a static screen alone. Each workflow diagram is paired with a capture of the corresponding screen in the live FBM application.",
+          "Configuring a network establishes the eight-level hierarchy (Operating Unit down to Meter); network mapping then lets an engineer re-parent equipment and group meters, transformers or feeders into clusters by drag-and-drop, with energy roll-ups recalculated automatically.",
+        ],
+        figures: [
+          { kind: "diagram", id: "config-workflow" },
+          { kind: "shot", file: "shot-configure.png", caption: "Figure 5.7 — Configure Network (live tool): the eight-level hierarchy with automatic energy roll-up and loss KPIs computed at every level." },
+          { kind: "diagram", id: "mapping-workflow" },
+          { kind: "shot", file: "shot-mapping.png", caption: "Figure 5.8 — Network Mapping (live tool): drag-and-drop organisation chart for a selected substation." },
+          { kind: "diagram", id: "meter-cluster-steps" },
+          { kind: "shot", file: "shot-cluster.png", caption: "Figure 5.9 — Network Mapping (live tool): two meters grouped into a meter cluster, with one-click Ungroup to reverse the grouping." },
+        ],
       },
     ],
   },
@@ -80,6 +127,10 @@ const sections = [
       ],
     },
     note: "The above timeline is illustrative. The final schedule must be reconciled with the issued tender milestones, scope volume, data migration complexity, external dependencies, procurement lead times and Client resource availability.",
+    figures: [
+      { kind: "diagram", id: "delivery-roadmap" },
+      { kind: "diagram", id: "sprint-cycle" },
+    ],
     subsections: [
       {
         title: "6.1 Sprint Delivery",
@@ -110,6 +161,7 @@ const sections = [
         ["Service Review", "SLA performance, incidents, problems, capacity, releases and continuous improvement.", "Monthly post go-live"],
       ],
     },
+    figures: [{ kind: "diagram", id: "governance-structure" }],
     subsections: [
       {
         title: "7.1 Quality Controls",
@@ -187,9 +239,12 @@ function buildDocx() {
     (s.intro || []).forEach((p) => children.push(new Paragraph({ spacing: { after: 140 }, children: [new TextRun({ text: p, size: 22, color: BRAND.dark })] })));
     if (s.table) children.push(docxTable(s.table.head, s.table.rows));
     if (s.note) children.push(new Paragraph({ spacing: { before: 140, after: 140 }, children: [new TextRun({ text: s.note, italics: true, size: 20, color: BRAND.grey })] }));
+    (s.figures || []).forEach((f) => pushDocxFigure(children, f));
     (s.subsections || []).forEach((sub) => {
       children.push(new Paragraph({ spacing: { before: 160, after: 80 }, children: [new TextRun({ text: sub.title, bold: true, size: 24, color: BRAND.dark })] }));
+      (sub.intro || []).forEach((p) => children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: p, size: 22, color: BRAND.dark })] })));
       (sub.bullets || []).forEach((b) => children.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 60 }, children: [new TextRun({ text: b, size: 22, color: BRAND.dark })] })));
+      (sub.figures || []).forEach((f) => pushDocxFigure(children, f));
     });
   }
 
@@ -225,6 +280,24 @@ function docxTable(head, rows) {
     })),
   }));
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, borders, rows: [headRow, ...bodyRows] });
+}
+
+function pushDocxFigure(children, fig) {
+  const r = resolveFigure(fig);
+  const maxW = 600;
+  const scale = Math.min(1, maxW / r.width);
+  const w = Math.round(r.width * scale);
+  const h = Math.round(r.height * scale);
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 160, after: 40 },
+    children: [new ImageRun({ type: "png", data: r.buffer, transformation: { width: w, height: h } })],
+  }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 },
+    children: [new TextRun({ text: r.caption, italics: true, size: 16, color: BRAND.grey })],
+  }));
 }
 
 /* ----------------------------------------------------------------- PDF build */
@@ -266,11 +339,13 @@ function buildPdf() {
     (s.intro || []).forEach((p) => { doc.font(REG).fontSize(11).fillColor(c(BRAND.dark)).text(p, { width: CW }); doc.moveDown(0.5); });
     if (s.table) pdfTable(s.table.head, s.table.rows, colWidthsFor(s.table.head.length));
     if (s.note) { doc.moveDown(0.4); doc.font(IT).fontSize(9.5).fillColor(c(BRAND.grey)).text(s.note, { width: CW }); doc.moveDown(0.3); }
+    (s.figures || []).forEach((f) => pdfFigure(f));
     (s.subsections || []).forEach((sub) => {
       ensure(60);
       doc.moveDown(0.5);
       doc.font(BOLD).fontSize(12).fillColor(c(BRAND.dark)).text(sub.title);
       doc.moveDown(0.2);
+      (sub.intro || []).forEach((p) => { doc.font(REG).fontSize(11).fillColor(c(BRAND.dark)).text(p, { width: CW }); doc.moveDown(0.4); });
       (sub.bullets || []).forEach((b) => {
         ensure(24);
         const startY = doc.y;
@@ -278,7 +353,23 @@ function buildPdf() {
         doc.font(REG).fontSize(11).fillColor(c(BRAND.dark)).text(b, M + 14, startY, { width: CW - 14 });
         doc.moveDown(0.25);
       });
+      (sub.figures || []).forEach((f) => pdfFigure(f));
     });
+  }
+
+  function pdfFigure(fig) {
+    const r = resolveFigure(fig);
+    const w = CW;
+    const h = r.height * (CW / r.width);
+    const capH = 22;
+    if (doc.y + h + capH > doc.page.height - M - 24) doc.addPage();
+    doc.moveDown(0.4);
+    const y = doc.y;
+    doc.image(r.buffer, M, y, { width: w });
+    if (r.isShot) doc.rect(M, y, w, h).strokeColor("#D1D5DB").lineWidth(0.75).stroke();
+    doc.y = y + h + 4;
+    doc.font(IT).fontSize(8.5).fillColor(c(BRAND.grey)).text(r.caption, M, doc.y, { width: CW, align: "center" });
+    doc.moveDown(0.6);
   }
 
   function colWidthsFor(n) {
