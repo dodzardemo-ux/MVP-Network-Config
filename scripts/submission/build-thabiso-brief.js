@@ -363,7 +363,7 @@ const sections = [
       {
         title: "17.1 Pricing Basis and Assumptions",
         bullets: [
-          "All rates are South African enterprise-IT benchmark day-rates (2026) and must be confirmed against T2 Technologies' actual rate card before submission.",
+          "All rates are South African enterprise-IT top-of-band (upper-quartile) benchmark rates (2026), quoted per hour and per day, and must be confirmed against T2 Technologies' actual rate card before submission.",
           "Prices exclude VAT; VAT at 15% is shown separately in the five-year summary.",
           `Software is licensed as T2's proprietary SaaS platform on a named-user basis: ${cost.LICENCE.users} users at ${cost.rands(cost.LICENCE.perUserPerMonth)} per user per month.`,
           "The implementation is a fixed-price engagement invoiced against the delivery milestones in 17.7; effort is shown for transparency and change-control.",
@@ -389,11 +389,11 @@ const sections = [
       },
       {
         title: "17.3 Professional Services Rate Card",
-        intro: ["The following blended day-rates underpin the implementation and support pricing."],
+        intro: [`The following top-of-band (upper-quartile) South African benchmark rates underpin the implementation and support pricing. Day-rates are calculated at an ${cost.HOURS_PER_DAY}-hour billable day.`],
         table: {
-          head: ["Role", "Day Rate (excl. VAT)"],
-          widths: [0.7, 0.3],
-          rows: Object.values(cost.RATES).map((r) => [r.label, cost.rands(r.rate)]),
+          head: ["Role", "Hourly (excl. VAT)", "Day Rate (excl. VAT)"],
+          widths: [0.5, 0.25, 0.25],
+          rows: Object.values(cost.RATES).map((r) => [r.label, cost.rands(r.hourly), cost.rands(r.rate)]),
         },
       },
       {

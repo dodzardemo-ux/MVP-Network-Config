@@ -7,26 +7,32 @@
  * the annual cost profile are summed from those same primitives.
  *
  * Basis / assumptions (all must be confirmed by T2 before submission):
- *  - Rates are South African enterprise-IT benchmark day-rates (2026), ZAR,
- *    excluding VAT.
+ *  - Rates are South African enterprise-IT TOP-OF-BAND (upper-quartile)
+ *    benchmark rates (2026), ZAR, excluding VAT. Stored per hour; day-rates
+ *    are derived at HOURS_PER_DAY (8-hour billable day).
  *  - Programme: 18-month implementation of the business requirements, then
  *    managed support & maintenance to the 5-year (60-month) mark.
  *  - Delivery team: standard ~8-10 blended resources.
  *  - Licence: T2 proprietary SaaS, 20 named users, billed per user per annum.
  */
 
-// --- Rate card (ZAR per person-day, ex VAT) ---------------------------------
-const RATES = {
-  pm: { label: "Programme / Project Manager", rate: 9800 },
-  sa: { label: "Solution Architect", rate: 12500 },
-  ba: { label: "Business Analyst", rate: 8200 },
-  sre: { label: "Senior Software Engineer", rate: 9500 },
-  eng: { label: "Software Engineer", rate: 6800 },
-  qa: { label: "QA / Test Analyst", rate: 6200 },
-  dm: { label: "Data Migration Specialist", rate: 8500 },
-  ops: { label: "DevOps / Cloud Engineer", rate: 9200 },
-  cm: { label: "Change & Training Specialist", rate: 6800 },
+// --- Rate card (top-of-band SA benchmarks; hourly is the source of truth) ---
+const HOURS_PER_DAY = 8;
+const RATE_CARD = {
+  pm: { label: "Programme / Project Manager", hourly: 1500 },
+  sa: { label: "Solution Architect", hourly: 1850 },
+  ba: { label: "Business Analyst", hourly: 1250 },
+  sre: { label: "Senior Software Engineer", hourly: 1400 },
+  eng: { label: "Software Engineer", hourly: 1000 },
+  qa: { label: "QA / Test Analyst", hourly: 950 },
+  dm: { label: "Data Migration Specialist", hourly: 1300 },
+  ops: { label: "DevOps / Cloud Engineer", hourly: 1400 },
+  cm: { label: "Change & Training Specialist", hourly: 1050 },
 };
+// Derive the day-rate used throughout the effort model from the hourly rate.
+const RATES = Object.fromEntries(
+  Object.entries(RATE_CARD).map(([k, v]) => [k, { ...v, rate: v.hourly * HOURS_PER_DAY }]),
+);
 
 // --- Work packages (Annexure L) with per-role person-day effort -------------
 const PACKAGES = [
@@ -42,8 +48,8 @@ const PACKAGES = [
 ];
 
 // --- Licence & support parameters -------------------------------------------
-const LICENCE = { users: 20, perUserPerMonth: 3000 }; // ZAR/user/month
-const SUPPORT_FTE = { sre: 0.3, eng: 0.5, qa: 0.2, pm: 0.1 }; // blended annual FTE
+const LICENCE = { users: 20, perUserPerMonth: 3600 }; // ZAR/user/month
+const SUPPORT_FTE = { sre: 0.4, eng: 0.6, qa: 0.3, ops: 0.1, pm: 0.15 }; // blended annual FTE
 const SUPPORT_DAYS_PER_YEAR = 230;
 const TERM_MONTHS = 60;
 const IMPLEMENTATION_MONTHS = 18;
@@ -108,7 +114,7 @@ function pct(n) {
 }
 
 module.exports = {
-  RATES, packages, implementationTotal, implementationDays,
+  RATES, HOURS_PER_DAY, packages, implementationTotal, implementationDays,
   LICENCE, licencePerYear, licenceFiveYear,
   supportPerYear, supportYears, supportTotal,
   fiveYearTco, MILESTONES, annualProfile, VAT_RATE,
@@ -118,8 +124,8 @@ module.exports = {
 
 // Allow `node cost-model.js` to print a reconciliation summary.
 if (require.main === module) {
-  console.log("Rate card:");
-  Object.values(RATES).forEach((r) => console.log("  " + r.label.padEnd(34), rands(r.rate) + "/day"));
+  console.log("Rate card (top-of-band, " + HOURS_PER_DAY + "h day):");
+  Object.values(RATES).forEach((r) => console.log("  " + r.label.padEnd(34), (rands(r.hourly) + "/hr").padEnd(14), rands(r.rate) + "/day"));
   console.log("\nWork packages:");
   packages.forEach((p) => console.log("  " + p.code, p.name.padEnd(48), (p.days + "pd").padEnd(8), rands(p.cost)));
   console.log("  " + "".padEnd(4), "IMPLEMENTATION TOTAL".padEnd(48), (implementationDays + "pd").padEnd(8), rands(implementationTotal));
