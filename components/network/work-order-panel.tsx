@@ -26,6 +26,7 @@ import {
   type WorkOrderPriority,
   type WorkOrderStatus,
 } from "@/lib/data/operations-data";
+import { useAuth } from "@/lib/context/auth-context";
 import { Wrench, ClipboardCheck, CheckCircle2, Plus } from "lucide-react";
 
 const typeConfig: Record<WorkOrderType, { label: string; className: string }> = {
@@ -49,6 +50,9 @@ const woStatusConfig: Record<WorkOrderStatus, { label: string; className: string
 let counter = 4600;
 
 export function WorkOrderPanel() {
+  const { can } = useAuth();
+  const canMaintenance = can("create_workorder");
+  const canAudit = can("initiate_audit");
   const [orders, setOrders] = useState<WorkOrder[]>(seededWorkOrders);
   const [flash, setFlash] = useState<string | null>(null);
   const [raised, setRaised] = useState<Set<string>>(new Set());
@@ -140,7 +144,8 @@ export function WorkOrderPanel() {
                           size="sm"
                           variant="outline"
                           className="h-7 gap-1 px-2 text-xs"
-                          disabled={raised.has(`${f.feederId}-maintenance`)}
+                          disabled={!canMaintenance || raised.has(`${f.feederId}-maintenance`)}
+                          title={canMaintenance ? undefined : "Requires the 'Log work orders' permission"}
                           onClick={() => createOrder(f.feederId, "maintenance")}
                         >
                           <Wrench className="h-3 w-3" />
@@ -149,7 +154,8 @@ export function WorkOrderPanel() {
                         <Button
                           size="sm"
                           className="h-7 gap-1 px-2 text-xs"
-                          disabled={raised.has(`${f.feederId}-audit`)}
+                          disabled={!canAudit || raised.has(`${f.feederId}-audit`)}
+                          title={canAudit ? undefined : "Requires the 'Initiate audits' permission"}
                           onClick={() => createOrder(f.feederId, "audit")}
                         >
                           <ClipboardCheck className="h-3 w-3" />
