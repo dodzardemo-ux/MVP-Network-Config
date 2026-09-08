@@ -10,10 +10,13 @@
  *  - Rates are South African enterprise-IT TOP-OF-BAND (upper-quartile)
  *    benchmark rates (2026), ZAR, excluding VAT. Stored per hour; day-rates
  *    are derived at HOURS_PER_DAY (8-hour billable day).
- *  - Programme: 18-month implementation of the business requirements, then
- *    managed support & maintenance to the 5-year (60-month) mark.
+ *  - Programme: 18-month implementation of the business requirements, then a
+ *    full 5 operational years of managed support & maintenance AFTER go-live
+ *    (SoW 6.1: S&M applies only once base implementation is in production).
  *  - Delivery team: standard ~8-10 blended resources.
- *  - Licence: T2 proprietary SaaS, 20 named users, billed per user per annum.
+ *  - Licence: T2 proprietary SaaS, named-user sliding scale mandated by the
+ *    SoW (6.1): 20 users during implementation, 40 in operational Year 1,
+ *    50 in operational Years 2-5. Billed per user per month.
  */
 
 // --- Rate card (top-of-band SA benchmarks; hourly is the source of truth) ---
@@ -48,11 +51,22 @@ const PACKAGES = [
 ];
 
 // --- Licence & support parameters -------------------------------------------
-const LICENCE = { users: 20, perUserPerMonth: 3600 }; // ZAR/user/month
+// SoW 6.1 named-user sliding scale, billed per user per month.
+const LICENCE = { perUserPerMonth: 3600 }; // ZAR/user/month
+const IMPLEMENTATION_MONTHS = 18;
+const SUPPORT_YEARS = 5; // full 5 operational years post go-live (SoW 6.1)
+// Licence schedule: implementation phase then five operational years.
+const LICENCE_SCHEDULE = [
+  { phase: "Implementation (Months 1-18)", users: 20, months: IMPLEMENTATION_MONTHS },
+  { phase: "Operational Year 1", users: 40, months: 12 },
+  { phase: "Operational Year 2", users: 50, months: 12 },
+  { phase: "Operational Year 3", users: 50, months: 12 },
+  { phase: "Operational Year 4", users: 50, months: 12 },
+  { phase: "Operational Year 5", users: 50, months: 12 },
+];
 const SUPPORT_FTE = { sre: 0.4, eng: 0.6, qa: 0.3, ops: 0.1, pm: 0.15 }; // blended annual FTE
 const SUPPORT_DAYS_PER_YEAR = 230;
-const TERM_MONTHS = 60;
-const IMPLEMENTATION_MONTHS = 18;
+const TERM_MONTHS = IMPLEMENTATION_MONTHS + SUPPORT_YEARS * 12; // 78 months total
 
 // --- Derivations ------------------------------------------------------------
 function packageCost(pkg) {
@@ -69,18 +83,24 @@ const packages = PACKAGES.map(packageCost);
 const implementationTotal = packages.reduce((s, p) => s + p.cost, 0);
 const implementationDays = packages.reduce((s, p) => s + p.days, 0);
 
-const licencePerYear = LICENCE.users * LICENCE.perUserPerMonth * 12;
-const licenceFiveYear = licencePerYear * 5;
+// Licence cost per schedule phase (users x rate x months).
+const licenceSchedule = LICENCE_SCHEDULE.map((p) => ({
+  ...p,
+  perYear: p.users * LICENCE.perUserPerMonth * 12,
+  cost: p.users * LICENCE.perUserPerMonth * p.months,
+}));
+const licenceTotal = licenceSchedule.reduce((s, p) => s + p.cost, 0);
 
 const supportPerYear = Object.entries(SUPPORT_FTE).reduce(
   (s, [role, fte]) => s + fte * SUPPORT_DAYS_PER_YEAR * RATES[role].rate,
   0,
 );
-// Support runs from go-live (~end of implementation) to the 5-year mark.
-const supportYears = Math.round((TERM_MONTHS - IMPLEMENTATION_MONTHS) / 12); // 4 (Years 2-5)
+// Support runs for a full five operational years after go-live.
+const supportYears = SUPPORT_YEARS;
 const supportTotal = supportPerYear * supportYears;
 
-const fiveYearTco = implementationTotal + licenceFiveYear + supportTotal;
+const totalContractValue = implementationTotal + licenceTotal + supportTotal;
+const fiveYearTco = totalContractValue; // backward-compatible alias
 
 // Milestone-based payment plan for the implementation value.
 const MILESTONES = [
@@ -93,14 +113,18 @@ const MILESTONES = [
   ["Stabilisation & final acceptance", 0.10],
 ];
 
-// Annual cost profile (ex VAT).
-const annualProfile = [
-  { year: "Year 1", implementation: implementationTotal, licence: licencePerYear, support: 0 },
-  { year: "Year 2", implementation: 0, licence: licencePerYear, support: supportPerYear },
-  { year: "Year 3", implementation: 0, licence: licencePerYear, support: supportPerYear },
-  { year: "Year 4", implementation: 0, licence: licencePerYear, support: supportPerYear },
-  { year: "Year 5", implementation: 0, licence: licencePerYear, support: supportPerYear },
-].map((r) => ({ ...r, total: r.implementation + r.licence + r.support }));
+// Phase-based cost profile (ex VAT): implementation phase, then five
+// operational years. Implementation and its licence fall in the build phase;
+// support & maintenance begins once the solution is in production.
+const annualProfile = licenceSchedule.map((p, i) => {
+  const isImpl = i === 0;
+  return {
+    year: isImpl ? "Implementation" : `Op. Year ${i}`,
+    implementation: isImpl ? implementationTotal : 0,
+    licence: p.cost,
+    support: isImpl ? 0 : supportPerYear,
+  };
+}).map((r) => ({ ...r, total: r.implementation + r.licence + r.support }));
 
 const VAT_RATE = 0.15;
 
@@ -115,10 +139,10 @@ function pct(n) {
 
 module.exports = {
   RATES, HOURS_PER_DAY, packages, implementationTotal, implementationDays,
-  LICENCE, licencePerYear, licenceFiveYear,
+  LICENCE, licenceSchedule, licenceTotal,
   supportPerYear, supportYears, supportTotal,
-  fiveYearTco, MILESTONES, annualProfile, VAT_RATE,
-  IMPLEMENTATION_MONTHS, TERM_MONTHS,
+  totalContractValue, fiveYearTco, MILESTONES, annualProfile, VAT_RATE,
+  IMPLEMENTATION_MONTHS, SUPPORT_YEARS, TERM_MONTHS,
   rands, pct,
 };
 
@@ -129,10 +153,12 @@ if (require.main === module) {
   console.log("\nWork packages:");
   packages.forEach((p) => console.log("  " + p.code, p.name.padEnd(48), (p.days + "pd").padEnd(8), rands(p.cost)));
   console.log("  " + "".padEnd(4), "IMPLEMENTATION TOTAL".padEnd(48), (implementationDays + "pd").padEnd(8), rands(implementationTotal));
-  console.log("\nLicence/yr:", rands(licencePerYear), "| 5-yr:", rands(licenceFiveYear));
+  console.log("\nLicence schedule:");
+  licenceSchedule.forEach((p) => console.log("  " + p.phase.padEnd(30), (p.users + " users").padEnd(10), (p.months + "mo").padEnd(6), rands(p.cost)));
+  console.log("  " + "LICENCE TOTAL".padEnd(30), "".padEnd(10), "".padEnd(6), rands(licenceTotal));
   console.log("Support/yr:", rands(supportPerYear), "| years:", supportYears, "| total:", rands(supportTotal));
-  console.log("5-YEAR TCO (ex VAT):", rands(fiveYearTco));
-  console.log("5-YEAR TCO (incl VAT):", rands(fiveYearTco * (1 + VAT_RATE)));
+  console.log("TOTAL CONTRACT VALUE (ex VAT):", rands(totalContractValue));
+  console.log("TOTAL CONTRACT VALUE (incl VAT):", rands(totalContractValue * (1 + VAT_RATE)));
   const profSum = annualProfile.reduce((s, r) => s + r.total, 0);
-  console.log("Annual profile sum:", rands(profSum), profSum === fiveYearTco ? "(reconciles)" : "(MISMATCH)");
+  console.log("Cost profile sum:", rands(profSum), profSum === totalContractValue ? "(reconciles)" : "(MISMATCH)");
 }
