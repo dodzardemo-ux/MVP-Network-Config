@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { NetworkProvider } from "@/lib/context/network-context";
-import { AuthProvider } from "@/lib/context/auth-context";
+import { AuthProvider, useAuth } from "@/lib/context/auth-context";
+import type { CapabilityId } from "@/lib/data/access-data";
 import { NetworkTree } from "@/components/network/network-tree";
 import { DetailsPanel } from "@/components/network/details-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
@@ -12,11 +14,31 @@ import { TraceabilityPanel } from "@/components/network/traceability-panel";
 import { SecurityPanel } from "@/components/network/security-panel";
 import { UserMenu } from "@/components/network/user-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Waypoints, LayoutDashboard, RadioTower, FileBarChart, ListChecks, ShieldCheck } from "lucide-react";
+import { Network, Waypoints, LayoutDashboard, RadioTower, FileBarChart, ListChecks, ShieldCheck, type LucideIcon } from "lucide-react";
+
+// Each tab declares the capability required to see it. Tabs without a `cap`
+// are visible to every role. This emulates back-end RBAC on the front end so
+// demo users only see what their role can actually do.
+const TAB_DEFS: { value: string; label: string; Icon: LucideIcon; cap?: CapabilityId }[] = [
+  { value: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { value: "configure", label: "Configure Network", Icon: Network, cap: "edit_network" },
+  { value: "mapping", label: "Network Mapping", Icon: Waypoints, cap: "edit_network" },
+  { value: "meters", label: "Stats Meters", Icon: RadioTower, cap: "manage_meters" },
+  { value: "reports", label: "Reports", Icon: FileBarChart, cap: "export_reports" },
+  { value: "access", label: "Access & Audit", Icon: ShieldCheck, cap: "view_audit_log" },
+  { value: "traceability", label: "Traceability", Icon: ListChecks },
+];
 
 function NetworkConfigContent() {
+  const { can } = useAuth();
+  const visibleTabs = TAB_DEFS.filter((t) => !t.cap || can(t.cap));
+  const [tab, setTab] = useState("dashboard");
+  // If the active tab is not permitted for the current role (e.g. after a role
+  // switch), fall back to the dashboard, which every role can see.
+  const activeTab = visibleTabs.some((t) => t.value === tab) ? tab : "dashboard";
+
   return (
-    <Tabs defaultValue="dashboard" className="h-full flex flex-col">
+    <Tabs value={activeTab} onValueChange={setTab} className="h-full flex flex-col">
       {/* Eskom-aligned brand bar: blue-to-green gradient, white logo, italic tagline, embedded nav */}
       <div className="bg-gradient-to-r from-[#00499b] via-[#1a7fb5] to-[#43a935]">
         <div className="flex items-center justify-between gap-4 px-6 pt-3">
@@ -44,15 +66,7 @@ function NetworkConfigContent() {
         {/* Navigation row embedded in the gradient */}
         <div className="px-6">
             <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
-            {[
-              { value: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
-              { value: "configure", label: "Configure Network", Icon: Network },
-              { value: "mapping", label: "Network Mapping", Icon: Waypoints },
-              { value: "meters", label: "Stats Meters", Icon: RadioTower },
-              { value: "reports", label: "Reports", Icon: FileBarChart },
-              { value: "access", label: "Access & Audit", Icon: ShieldCheck },
-              { value: "traceability", label: "Traceability", Icon: ListChecks },
-            ].map(({ value, label, Icon }) => (
+            {visibleTabs.map(({ value, label, Icon }) => (
               <TabsTrigger
                 key={value}
                 value={value}
@@ -70,32 +84,42 @@ function NetworkConfigContent() {
         <DashboardPanel />
       </TabsContent>
 
-      <TabsContent value="configure" className="flex-1 m-0 overflow-hidden">
-        <div className="flex h-full">
-          <div className="w-80 min-w-64 max-w-96 h-full border-r bg-muted/30 overflow-hidden">
-            <NetworkTree />
+      {can("edit_network") && (
+        <TabsContent value="configure" className="flex-1 m-0 overflow-hidden">
+          <div className="flex h-full">
+            <div className="w-80 min-w-64 max-w-96 h-full border-r bg-muted/30 overflow-hidden">
+              <NetworkTree />
+            </div>
+            <div className="flex-1 h-full overflow-auto p-6">
+              <DetailsPanel />
+            </div>
           </div>
-          <div className="flex-1 h-full overflow-auto p-6">
-            <DetailsPanel />
-          </div>
-        </div>
-      </TabsContent>
+        </TabsContent>
+      )}
 
-      <TabsContent value="mapping" className="flex-1 m-0 p-6 overflow-hidden">
-        <NetworkMappingCanvas />
-      </TabsContent>
+      {can("edit_network") && (
+        <TabsContent value="mapping" className="flex-1 m-0 p-6 overflow-hidden">
+          <NetworkMappingCanvas />
+        </TabsContent>
+      )}
 
-      <TabsContent value="meters" className="flex-1 m-0 p-6 overflow-auto">
-        <StatsMeterPanel />
-      </TabsContent>
+      {can("manage_meters") && (
+        <TabsContent value="meters" className="flex-1 m-0 p-6 overflow-auto">
+          <StatsMeterPanel />
+        </TabsContent>
+      )}
 
-      <TabsContent value="reports" className="flex-1 m-0 p-6 overflow-auto">
-        <ReportPanel />
-      </TabsContent>
+      {can("export_reports") && (
+        <TabsContent value="reports" className="flex-1 m-0 p-6 overflow-auto">
+          <ReportPanel />
+        </TabsContent>
+      )}
 
-      <TabsContent value="access" className="flex-1 m-0 p-6 overflow-auto">
-        <SecurityPanel />
-      </TabsContent>
+      {can("view_audit_log") && (
+        <TabsContent value="access" className="flex-1 m-0 p-6 overflow-auto">
+          <SecurityPanel />
+        </TabsContent>
+      )}
 
       <TabsContent value="traceability" className="flex-1 m-0 p-6 overflow-auto">
         <TraceabilityPanel />

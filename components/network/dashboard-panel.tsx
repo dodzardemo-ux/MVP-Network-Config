@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useNetwork } from "@/lib/context/network-context";
+import { useAuth } from "@/lib/context/auth-context";
 import { zones } from "@/lib/data/network-data";
 import {
   calculateZoneLoss,
@@ -45,6 +46,9 @@ const chartConfig = {
 
 export function DashboardPanel() {
   const { state } = useNetwork();
+  const { can } = useAuth();
+  const canResolveExceptions = can("resolve_exceptions");
+  const canWorkOrders = can("create_workorder") || can("initiate_audit");
   const [thresholds, setThresholds] = useState<LossThresholds>({
     low: 5,
     medium: 10,
@@ -325,13 +329,18 @@ export function DashboardPanel() {
         </CardContent>
       </Card>
 
-      {/* Data Validation & Work Orders, embedded as dashboard sections */}
-      <div className="border-t pt-6">
-        <DataValidationPanel />
-      </div>
-      <div className="border-t pt-6">
-        <WorkOrderPanel />
-      </div>
+      {/* Data Validation & Work Orders, embedded as dashboard sections and
+          shown only to roles whose capabilities cover them. */}
+      {canResolveExceptions && (
+        <div className="border-t pt-6">
+          <DataValidationPanel />
+        </div>
+      )}
+      {canWorkOrders && (
+        <div className="border-t pt-6">
+          <WorkOrderPanel />
+        </div>
+      )}
     </div>
   );
 }
