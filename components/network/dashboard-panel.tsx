@@ -15,6 +15,8 @@ import {
   type DistrictLoss,
   type LossThresholds,
 } from "@/components/network/gauteng-loss-map";
+import { DataValidationPanel } from "@/components/network/data-validation-panel";
+import { WorkOrderPanel } from "@/components/network/work-order-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -322,6 +324,14 @@ export function DashboardPanel() {
           </ChartContainer>
         </CardContent>
       </Card>
+
+      {/* Data Validation & Work Orders, embedded as dashboard sections */}
+      <div className="border-t pt-6">
+        <DataValidationPanel />
+      </div>
+      <div className="border-t pt-6">
+        <WorkOrderPanel />
+      </div>
     </div>
   );
 }

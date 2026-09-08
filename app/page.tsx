@@ -3,18 +3,13 @@
 import { NetworkProvider } from "@/lib/context/network-context";
 import { NetworkTree } from "@/components/network/network-tree";
 import { DetailsPanel } from "@/components/network/details-panel";
-import { CalculationPanel } from "@/components/network/calculation-panel";
-import { LossDashboard } from "@/components/network/loss-dashboard";
-import { CDUAllocationPanel } from "@/components/network/cdu-allocation-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
 import { DashboardPanel } from "@/components/network/dashboard-panel";
 import { StatsMeterPanel } from "@/components/network/stats-meter-panel";
-import { DataValidationPanel } from "@/components/network/data-validation-panel";
-import { WorkOrderPanel } from "@/components/network/work-order-panel";
 import { ReportPanel } from "@/components/network/report-panel";
 import { TraceabilityPanel } from "@/components/network/traceability-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard, RadioTower, ShieldCheck, Wrench, FileBarChart, ListChecks } from "lucide-react";
+import { Network, Waypoints, LayoutDashboard, RadioTower, FileBarChart, ListChecks } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
@@ -48,12 +43,7 @@ function NetworkConfigContent() {
               { value: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
               { value: "configure", label: "Configure Network", Icon: Network },
               { value: "mapping", label: "Network Mapping", Icon: Waypoints },
-              { value: "calculate", label: "Calculate Losses", Icon: Calculator },
-              { value: "cdu", label: "CDU Allocation", Icon: Gauge },
-              { value: "results", label: "View Results", Icon: BarChart3 },
               { value: "meters", label: "Stats Meters", Icon: RadioTower },
-              { value: "validation", label: "Data Validation", Icon: ShieldCheck },
-              { value: "workorders", label: "Work Orders", Icon: Wrench },
               { value: "reports", label: "Reports", Icon: FileBarChart },
               { value: "traceability", label: "Traceability", Icon: ListChecks },
             ].map(({ value, label, Icon }) => (
@@ -89,28 +79,8 @@ function NetworkConfigContent() {
         <NetworkMappingCanvas />
       </TabsContent>
 
-      <TabsContent value="calculate" className="flex-1 m-0 p-6 overflow-auto">
-        <CalculationPanel />
-      </TabsContent>
-
-      <TabsContent value="cdu" className="flex-1 m-0 p-6 overflow-auto">
-        <CDUAllocationPanel />
-      </TabsContent>
-
-      <TabsContent value="results" className="flex-1 m-0 p-6 overflow-auto">
-        <LossDashboard />
-      </TabsContent>
-
       <TabsContent value="meters" className="flex-1 m-0 p-6 overflow-auto">
         <StatsMeterPanel />
-      </TabsContent>
-
-      <TabsContent value="validation" className="flex-1 m-0 p-6 overflow-auto">
-        <DataValidationPanel />
-      </TabsContent>
-
-      <TabsContent value="workorders" className="flex-1 m-0 p-6 overflow-auto">
-        <WorkOrderPanel />
       </TabsContent>
 
       <TabsContent value="reports" className="flex-1 m-0 p-6 overflow-auto">
