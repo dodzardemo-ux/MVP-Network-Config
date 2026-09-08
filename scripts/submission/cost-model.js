@@ -48,8 +48,8 @@ const PACKAGES = [
 ];
 
 // --- Licence & support parameters -------------------------------------------
-const LICENCE = { users: 20, perUserPerMonth: 3000 }; // ZAR/user/month
-const SUPPORT_FTE = { sre: 0.3, eng: 0.5, qa: 0.2, pm: 0.1 }; // blended annual FTE
+const LICENCE = { users: 20, perUserPerMonth: 3600 }; // ZAR/user/month
+const SUPPORT_FTE = { sre: 0.4, eng: 0.6, qa: 0.3, ops: 0.1, pm: 0.15 }; // blended annual FTE
 const SUPPORT_DAYS_PER_YEAR = 230;
 const TERM_MONTHS = 60;
 const IMPLEMENTATION_MONTHS = 18;
