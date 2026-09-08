@@ -18,6 +18,7 @@ const {
 } = require("docx");
 const PDFDocument = require("pdfkit");
 const { buildAll } = require("./diagrams");
+const cost = require("./cost-model");
 
 // Rasterised diagrams (id -> { buffer, width, height, title }) and helpers to
 // resolve either a diagram or a live-application screenshot into an embeddable
@@ -183,24 +184,108 @@ const sections = [
     title: "Commercial Proposal Framework / Pricing Schedule",
     ownership: "Shared — Tumelo / Thabiso",
     intro: [
-      "Pricing must be completed strictly in the format prescribed by the tender. The following table can be used as an internal reconciliation schedule before values are transferred to the official pricing forms.",
+      "This section presents a fully costed commercial estimate aligned to the structure of the tender's Pricing Schedule (Annexure L): a software/subscription licence line, itemised implementation work-packages, a professional-services rate card, support & maintenance, a five-year total cost of ownership and a milestone-based payment plan. All figures are in South African Rand and exclude VAT unless stated otherwise.",
+      "The estimate assumes an 18-month implementation of the business requirements followed by managed support & maintenance to the five-year (60-month) mark, delivered by a standard blended team of approximately 8-10 resources. Every currency figure is derived from the rate card and the effort plan below, so the totals reconcile across all tables.",
     ],
-    table: {
-      head: ["Cost Component", "Pricing Basis", "Amount (Excl. VAT)", "Notes"],
-      rows: [
-        ["Mobilisation & Discovery", "Fixed price / milestone", "R [INSERT]", ""],
-        ["Architecture & Design", "Fixed price / milestone", "R [INSERT]", ""],
-        ["Application & Integration Delivery", "Fixed / sprint / deliverable", "R [INSERT]", ""],
-        ["Data & Migration", "Fixed / estimated volume", "R [INSERT]", ""],
-        ["Cloud / DevOps Setup", "Fixed price", "R [INSERT]", "Third-party cloud fees separate unless included"],
-        ["Testing & Go-Live", "Fixed price", "R [INSERT]", ""],
-        ["Training & Knowledge Transfer", "Fixed price", "R [INSERT]", ""],
-        ["Support & Maintenance", "Monthly / annual", "R [INSERT]", "State SLA and support window"],
-        ["Third-Party Costs", "At cost / specified", "R [INSERT]", "List separately"],
-        ["Total Tendered Price", "As prescribed", "R [INSERT]", "Reconcile to official tender schedule"],
-      ],
-    },
-    note: "Commercial validity, escalation, travel, disbursements, VAT, payment milestones, retention, performance guarantees and any exchange-rate assumptions must be completed exactly as required by the tender conditions.",
+    subsections: [
+      {
+        title: "17.1 Pricing Basis and Assumptions",
+        bullets: [
+          "All rates are South African enterprise-IT benchmark day-rates (2026) and must be confirmed against T2 Technologies' actual rate card before submission.",
+          "Prices exclude VAT; VAT at 15% is shown separately in the five-year summary.",
+          `Software is licensed as T2's proprietary SaaS platform on a named-user basis: ${cost.LICENCE.users} users at ${cost.rands(cost.LICENCE.perUserPerMonth)} per user per month.`,
+          "The implementation is a fixed-price engagement invoiced against the delivery milestones in 17.7; effort is shown for transparency and change-control.",
+          "Support & maintenance begins at production go-live (a three-month warranty is included in Stabilisation) and runs to the five-year mark.",
+          "Third-party cloud/hosting, network connectivity, non-standard integrations, hardware and travel/disbursements outside Gauteng are excluded and quoted at cost on confirmation.",
+        ],
+      },
+      {
+        title: "17.2 Software / Subscription Licence",
+        table: {
+          head: ["Item", "Qty", "Unit Basis", "Annual (excl. VAT)", "5-Year (excl. VAT)"],
+          widths: [0.34, 0.08, 0.24, 0.17, 0.17],
+          rows: [
+            [
+              "T2 FBM SaaS — named-user licence",
+              String(cost.LICENCE.users),
+              `${cost.rands(cost.LICENCE.perUserPerMonth)} / user / month`,
+              cost.rands(cost.licencePerYear),
+              cost.rands(cost.licenceFiveYear),
+            ],
+          ],
+        },
+      },
+      {
+        title: "17.3 Professional Services Rate Card",
+        intro: ["The following blended day-rates underpin the implementation and support pricing."],
+        table: {
+          head: ["Role", "Day Rate (excl. VAT)"],
+          widths: [0.7, 0.3],
+          rows: Object.values(cost.RATES).map((r) => [r.label, cost.rands(r.rate)]),
+        },
+      },
+      {
+        title: "17.4 Implementation Work-Package Pricing",
+        intro: ["Fixed-price implementation broken down by the Annexure L work-packages, with indicative effort."],
+        table: {
+          head: ["Ref", "Work Package", "Effort (p-days)", "Price (excl. VAT)"],
+          widths: [0.09, 0.55, 0.16, 0.2],
+          rows: [
+            ...cost.packages.map((p) => [p.code, p.name, String(p.days), cost.rands(p.cost)]),
+            ["", "Total implementation (fixed price)", String(cost.implementationDays), cost.rands(cost.implementationTotal)],
+          ],
+        },
+      },
+      {
+        title: "17.5 Support and Maintenance",
+        table: {
+          head: ["Item", "Basis", "Annual (excl. VAT)", "Term", "Total (excl. VAT)"],
+          widths: [0.26, 0.22, 0.16, 0.18, 0.18],
+          rows: [
+            [
+              "Managed support & maintenance",
+              "Blended support team",
+              cost.rands(cost.supportPerYear),
+              `${cost.supportYears} yrs (post go-live)`,
+              cost.rands(cost.supportTotal),
+            ],
+          ],
+        },
+        note: "Support covers L2/L3 application support, corrective and adaptive maintenance, platform updates and service management under an agreed SLA. Final SLA tiers and support windows to be confirmed with the Client.",
+      },
+      {
+        title: "17.6 Five-Year Total Cost of Ownership",
+        table: {
+          head: ["Year", "Implementation", "Licence", "Support & Maint.", "Annual Total"],
+          widths: [0.16, 0.22, 0.18, 0.22, 0.22],
+          rows: [
+            ...cost.annualProfile.map((r) => [
+              r.year,
+              r.implementation ? cost.rands(r.implementation) : "—",
+              cost.rands(r.licence),
+              r.support ? cost.rands(r.support) : "—",
+              cost.rands(r.total),
+            ]),
+            ["Total (excl. VAT)", "", "", "", cost.rands(cost.fiveYearTco)],
+            ["VAT @ 15%", "", "", "", cost.rands(cost.fiveYearTco * cost.VAT_RATE)],
+            ["Total (incl. VAT)", "", "", "", cost.rands(cost.fiveYearTco * (1 + cost.VAT_RATE))],
+          ],
+        },
+      },
+      {
+        title: "17.7 Payment Milestone Schedule",
+        intro: ["Implementation value is invoiced on completion and acceptance of each milestone across the 18-month term."],
+        table: {
+          head: ["Milestone", "% of Implementation", "Value (excl. VAT)"],
+          widths: [0.56, 0.22, 0.22],
+          rows: [
+            ...cost.MILESTONES.map(([label, p]) => [label, cost.pct(p), cost.rands(cost.implementationTotal * p)]),
+            ["Total", "100%", cost.rands(cost.implementationTotal)],
+          ],
+        },
+      },
+    ],
+    note: "Commercial validity period, price escalation, retention, performance guarantees and any exchange-rate assumptions must still be completed exactly as required by the tender conditions before the figures are transferred to the official Annexure L pricing forms. All estimates are benchmark-based and subject to T2 Technologies' final review.",
   },
 ];
 
@@ -244,6 +329,8 @@ function buildDocx() {
       children.push(new Paragraph({ spacing: { before: 160, after: 80 }, children: [new TextRun({ text: sub.title, bold: true, size: 24, color: BRAND.dark })] }));
       (sub.intro || []).forEach((p) => children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: p, size: 22, color: BRAND.dark })] })));
       (sub.bullets || []).forEach((b) => children.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 60 }, children: [new TextRun({ text: b, size: 22, color: BRAND.dark })] })));
+      if (sub.table) children.push(docxTable(sub.table.head, sub.table.rows));
+      if (sub.note) children.push(new Paragraph({ spacing: { before: 100, after: 140 }, children: [new TextRun({ text: sub.note, italics: true, size: 18, color: BRAND.grey })] }));
       (sub.figures || []).forEach((f) => pushDocxFigure(children, f));
     });
   }
@@ -353,6 +440,8 @@ function buildPdf() {
         doc.font(REG).fontSize(11).fillColor(c(BRAND.dark)).text(b, M + 14, startY, { width: CW - 14 });
         doc.moveDown(0.25);
       });
+      if (sub.table) { ensure(80); pdfTable(sub.table.head, sub.table.rows, sub.table.widths || colWidthsFor(sub.table.head.length)); }
+      if (sub.note) { doc.moveDown(0.3); doc.font(IT).fontSize(9).fillColor(c(BRAND.grey)).text(sub.note, { width: CW }); doc.moveDown(0.3); }
       (sub.figures || []).forEach((f) => pdfFigure(f));
     });
   }
