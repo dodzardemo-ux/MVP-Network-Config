@@ -8,8 +8,13 @@ import { LossDashboard } from "@/components/network/loss-dashboard";
 import { CDUAllocationPanel } from "@/components/network/cdu-allocation-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
 import { DashboardPanel } from "@/components/network/dashboard-panel";
+import { StatsMeterPanel } from "@/components/network/stats-meter-panel";
+import { DataValidationPanel } from "@/components/network/data-validation-panel";
+import { WorkOrderPanel } from "@/components/network/work-order-panel";
+import { ReportPanel } from "@/components/network/report-panel";
+import { TraceabilityPanel } from "@/components/network/traceability-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard, FileText, FileType2 } from "lucide-react";
+import { Network, Calculator, BarChart3, Gauge, Waypoints, LayoutDashboard, RadioTower, ShieldCheck, Wrench, FileBarChart, ListChecks } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
@@ -30,27 +35,6 @@ function NetworkConfigContent() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden items-center gap-2 lg:flex" aria-label="Download tender submission">
-              <span className="text-xs font-medium uppercase tracking-wide text-white/70">
-                Tender submission
-              </span>
-              <a
-                href="/downloads/T2-Technologies-FBM-Tender-Submission.pdf"
-                download
-                className="flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/25"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                PDF
-              </a>
-              <a
-                href="/downloads/T2-Technologies-FBM-Tender-Submission.docx"
-                download
-                className="flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/25"
-              >
-                <FileType2 className="h-3.5 w-3.5" />
-                Word
-              </a>
-            </div>
             <p className="hidden font-serif text-lg italic text-white md:block">
               Redefining for a <span className="font-bold not-italic">better future.</span>
             </p>
@@ -59,7 +43,7 @@ function NetworkConfigContent() {
 
         {/* Navigation row embedded in the gradient */}
         <div className="px-6">
-          <TabsList className="h-auto justify-start gap-1 rounded-none bg-transparent p-0">
+            <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-none bg-transparent p-0">
             {[
               { value: "dashboard", label: "Dashboard", Icon: LayoutDashboard },
               { value: "configure", label: "Configure Network", Icon: Network },
@@ -67,6 +51,11 @@ function NetworkConfigContent() {
               { value: "calculate", label: "Calculate Losses", Icon: Calculator },
               { value: "cdu", label: "CDU Allocation", Icon: Gauge },
               { value: "results", label: "View Results", Icon: BarChart3 },
+              { value: "meters", label: "Stats Meters", Icon: RadioTower },
+              { value: "validation", label: "Data Validation", Icon: ShieldCheck },
+              { value: "workorders", label: "Work Orders", Icon: Wrench },
+              { value: "reports", label: "Reports", Icon: FileBarChart },
+              { value: "traceability", label: "Traceability", Icon: ListChecks },
             ].map(({ value, label, Icon }) => (
               <TabsTrigger
                 key={value}
@@ -110,6 +99,26 @@ function NetworkConfigContent() {
 
       <TabsContent value="results" className="flex-1 m-0 p-6 overflow-auto">
         <LossDashboard />
+      </TabsContent>
+
+      <TabsContent value="meters" className="flex-1 m-0 p-6 overflow-auto">
+        <StatsMeterPanel />
+      </TabsContent>
+
+      <TabsContent value="validation" className="flex-1 m-0 p-6 overflow-auto">
+        <DataValidationPanel />
+      </TabsContent>
+
+      <TabsContent value="workorders" className="flex-1 m-0 p-6 overflow-auto">
+        <WorkOrderPanel />
+      </TabsContent>
+
+      <TabsContent value="reports" className="flex-1 m-0 p-6 overflow-auto">
+        <ReportPanel />
+      </TabsContent>
+
+      <TabsContent value="traceability" className="flex-1 m-0 p-6 overflow-auto">
+        <TraceabilityPanel />
       </TabsContent>
     </Tabs>
   );
