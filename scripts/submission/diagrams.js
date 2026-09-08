@@ -406,6 +406,217 @@ function meterClusterSteps() {
   return { id: "meter-cluster-steps", title: "Figure 5.6 — Creating a meter cluster", w: W, h: H, svg: wrap(W, H, s) };
 }
 
+// 10. Defence-in-depth security layers (Section 8)
+function securityLayers() {
+  const W = 940, H = 600;
+  let s = txt(W / 2, 40, "Defence-in-Depth — layered security controls", { size: 19, weight: 700, color: C.blue, anchor: "middle" });
+  const layers = [
+    ["Perimeter & Edge", "Azure Front Door · WAF · DDoS protection", C.blue, C.blueSoft],
+    ["Network", "VNet isolation · NSGs · Azure Firewall · private endpoints", C.cyan, C.cyanSoft],
+    ["Identity & Access", "Entra ID · MFA / SSO · RBAC · least privilege", C.indigo, C.indigoSoft],
+    ["Application", "Secure SDLC · SAST / DAST · input validation · Key Vault", C.amber, C.amberSoft],
+    ["Data", "AES-256 at rest · TLS 1.3 in transit · PII masking", C.green, C.greenSoft],
+  ];
+  layers.forEach((L, i) => {
+    const x = 40 + 64 * i, y = 66 + 50 * i, w = 840 - 128 * i, h = 474 - 84 * i;
+    s += rect(x, y, w, h, { fill: L[3], stroke: L[2], sw: 2, rx: 14 });
+    const cw = Math.max(150, L[0].length * 9 + 30), cx = x + w / 2;
+    s += rect(cx - cw / 2, y - 14, cw, 28, { fill: L[2], stroke: L[2], rx: 14, sw: 0 });
+    s += txt(cx, y + 5, L[0], { size: 13, weight: 700, color: C.white, anchor: "middle" });
+    s += txt(cx, y + 31, L[1], { size: 10.5, color: C.dark, anchor: "middle" });
+  });
+  const coreX = 350, coreY = 308, coreW = 220, coreH = 72;
+  s += rect(coreX, coreY, coreW, coreH, { fill: C.blue, stroke: C.blue, rx: 12, sw: 0 });
+  s += txt(coreX + coreW / 2, coreY + coreH / 2 - 3, "FBM data", { size: 13, weight: 700, color: C.white, anchor: "middle" });
+  s += txt(coreX + coreW / 2, coreY + coreH / 2 + 15, "& audit trail", { size: 12, weight: 600, color: C.white, anchor: "middle" });
+  s += txt(W / 2, H - 14, "Each layer is independent: a control failure at one layer is contained by the layers around it; all layers emit events to centralised monitoring.", { size: 10.5, color: C.grey, anchor: "middle" });
+  return { id: "security-layers", title: "Figure 8.1 — Defence-in-depth security layers", w: W, h: H, svg: wrap(W, H, s) };
+}
+
+// 11. Authenticated request & access-control flow (Section 8)
+function identityFlow() {
+  const W = 960, H = 380;
+  let s = txt(W / 2, 34, "Authenticated Request Flow & Access Control", { size: 19, weight: 700, color: C.blue, anchor: "middle" });
+  const y = 84, h = 74, w = 150, gap = 22, startX = 61;
+  const steps = [
+    ["User", "Eskom staff", C.blueSoft, C.blue],
+    ["Entra ID", "SSO + MFA", C.indigoSoft, C.indigo],
+    ["Edge", "Front Door · WAF", C.cyanSoft, C.cyan],
+    ["API + RBAC", "token · role → capability", C.amberSoft, C.amber],
+    ["FBM services", "access granted", C.greenSoft, C.green],
+  ];
+  const cxOf = (i) => startX + i * (w + gap) + w / 2;
+  steps.forEach((st, i) => {
+    const x = startX + i * (w + gap);
+    s += node(x, y, w, h, st[0], { fill: st[2], stroke: st[3], titleColor: st[3], sub: st[1], titleSize: 13 });
+    if (i < steps.length - 1) s += arrow(x + w, y + h / 2, x + w + gap, y + h / 2);
+  });
+  const apiCx = cxOf(3), dY = 206;
+  s += arrow(apiCx, y + h, apiCx, dY, { color: C.red });
+  s += txt(apiCx + 10, (y + h + dY) / 2 + 4, "deny", { size: 10.5, color: C.red, weight: 600 });
+  s += node(apiCx - w / 2, dY, w, 56, "Access denied", { fill: C.redSoft, stroke: C.red, titleColor: C.red, sub: "blocked + logged", titleSize: 12.5 });
+  const abX = startX, abW = (w + gap) * 4 + w, abY = 300, abH = 50;
+  s += rect(abX, abY, abW, abH, { fill: C.light, stroke: C.grey, sw: 1.5, rx: 10 });
+  s += txt(abX + abW / 2, abY + abH / 2 + 4.5, "Immutable audit log — every authentication and authorisation event is recorded", { size: 12, weight: 600, color: C.dark, anchor: "middle" });
+  [cxOf(1), cxOf(4)].forEach((cx) => { s += arrow(cx, y + h, cx, abY, { color: C.grey, width: 1.3, dash: "4 3" }); });
+  s += arrow(apiCx, dY + 56, apiCx, abY, { color: C.grey, width: 1.3, dash: "4 3" });
+  return { id: "identity-flow", title: "Figure 8.2 — Authenticated request & access-control flow", w: W, h: H, svg: wrap(W, H, s) };
+}
+
+// 12. Compliance framework mapping (Section 8)
+function complianceMatrix() {
+  const W = 960, H = 470;
+  let s = txt(W / 2, 36, "Compliance Framework Mapping", { size: 19, weight: 700, color: C.blue, anchor: "middle" });
+  const cols = ["POPIA", "ISO/IEC 27001", "SOC 2 Type II", "GDPR", "ISO 27017/18", "NIST CSF"];
+  const rows = [
+    ["Data protection & privacy", [1, 1, 1, 1, 1, 1]],
+    ["Identity & access management", [1, 1, 1, 1, 1, 1]],
+    ["Encryption (rest & transit)", [1, 1, 1, 1, 1, 1]],
+    ["Logging, audit & monitoring", [1, 1, 1, 1, 1, 1]],
+    ["Secure development (SAST/DAST)", [0, 1, 1, 1, 0, 1]],
+    ["Resilience, backup & DR", [0, 1, 1, 0, 1, 1]],
+    ["Incident & breach response", [1, 1, 1, 1, 0, 1]],
+  ];
+  const x0 = 40, labelW = 250, colW = (W - 80 - labelW) / cols.length;
+  const y0 = 66, headH = 54, rowH = 44;
+  cols.forEach((c, i) => {
+    const cx = x0 + labelW + i * colW + colW / 2;
+    s += rect(x0 + labelW + i * colW + 4, y0 + 8, colW - 8, headH - 12, { fill: C.blueSoft, stroke: C.blue, sw: 1, rx: 8 });
+    s += txt(cx, y0 + headH / 2 + 4, c, { size: 10.5, weight: 700, color: C.blue, anchor: "middle" });
+  });
+  rows.forEach((r, ri) => {
+    const ry = y0 + headH + ri * rowH;
+    if (ri % 2 === 0) s += rect(x0, ry, W - 80, rowH, { fill: C.light, stroke: C.light, sw: 0, rx: 0 });
+    s += txt(x0 + 12, ry + rowH / 2 + 4, r[0], { size: 11.5, weight: 600, color: C.dark });
+    r[1].forEach((v, ci) => {
+      const cx = x0 + labelW + ci * colW + colW / 2, cy = ry + rowH / 2;
+      if (v) {
+        s += `<circle cx="${cx}" cy="${cy}" r="8" fill="${C.green}"/>`;
+        s += `<path d="M ${cx - 3.6} ${cy} L ${cx - 1} ${cy + 2.6} L ${cx + 4} ${cy - 3}" stroke="#fff" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      } else {
+        s += line(cx - 6, cy, cx + 6, cy, { color: C.border, width: 2 });
+      }
+    });
+  });
+  s += rect(x0, y0 + headH, W - 80, rows.length * rowH, { fill: "none", stroke: C.border, sw: 1.5, rx: 8 });
+  s += txt(W / 2, H - 14, "Mapping indicates design intent; certification scope and evidence to be confirmed with T2 Technologies and the Client during discovery.", { size: 10.5, color: C.grey, anchor: "middle" });
+  return { id: "compliance-matrix", title: "Figure 8.3 — Compliance framework mapping", w: W, h: H, svg: wrap(W, H, s) };
+}
+
+// 13. Azure deployment architecture (Section 9)
+function azureDeployment() {
+  const W = 980, H = 640, B = C.blue;
+  let s = txt(W / 2, 34, "Azure Deployment Architecture — Eskom Tenant", { size: 19, weight: 700, color: B, anchor: "middle" });
+  s += node(40, 66, 190, 56, "End users", { fill: C.blueSoft, stroke: B, titleColor: B, sub: "browser · mobile", titleSize: 13 });
+  s += node(750, 66, 190, 56, "Source systems", { fill: C.goldSoft, stroke: C.gold, titleColor: C.gold, sub: "MV90 · CC&B · Works Mgmt", titleSize: 12.5 });
+  s += rect(40, 150, 900, 448, { fill: "#FAFBFD", stroke: B, sw: 2, rx: 14 });
+  s += txt(60, 176, "Microsoft Azure — Eskom Tenant · South Africa North (primary) · data resident in RSA", { size: 12, weight: 700, color: B });
+  s += node(80, 196, 360, 48, "Azure Front Door · WAF · DDoS", { fill: C.cyanSoft, stroke: C.cyan, titleColor: C.cyan, titleSize: 12.5 });
+  s += node(540, 196, 360, 48, "API Management / ESB (iPaaS)", { fill: C.amberSoft, stroke: C.amber, titleColor: C.amber, titleSize: 12.5 });
+  s += arrow(135, 122, 200, 196);
+  s += arrow(845, 122, 720, 196);
+  // VNet
+  s += rect(80, 268, 540, 250, { fill: C.white, stroke: C.indigo, sw: 1.8, rx: 12, dash: "6 4" });
+  s += txt(96, 290, "Virtual Network — private · NSG · Azure Firewall", { size: 11.5, weight: 700, color: C.indigo });
+  s += node(210, 306, 200, 64, "AKS / App Service", { fill: C.indigoSoft, stroke: C.indigo, titleColor: C.indigo, sub: "stateless microservices", titleSize: 13 });
+  s += node(100, 410, 160, 72, "Azure SQL", { fill: C.greenSoft, stroke: C.green, titleColor: C.green, sub: "zone-redundant · TDE", titleSize: 12.5 });
+  s += node(280, 410, 160, 72, "Storage / Blob", { fill: C.greenSoft, stroke: C.green, titleColor: C.green, sub: "integration · reports", titleSize: 12.5 });
+  s += node(460, 410, 140, 72, "Azure Cache", { fill: C.light, stroke: C.grey, titleColor: C.dark, sub: "sessions", titleSize: 12.5 });
+  // Platform services
+  s += rect(650, 268, 250, 250, { fill: C.white, stroke: C.gold, sw: 1.8, rx: 12 });
+  s += txt(666, 290, "Platform services", { size: 11.5, weight: 700, color: C.gold });
+  s += node(668, 304, 214, 52, "Microsoft Entra ID", { fill: C.blueSoft, stroke: B, titleColor: B, sub: "SSO · MFA · RBAC", titleSize: 12.5 });
+  s += node(668, 366, 214, 52, "Azure Key Vault", { fill: C.blueSoft, stroke: B, titleColor: B, sub: "secrets · keys", titleSize: 12.5 });
+  s += node(668, 428, 214, 62, "Monitor · Log Analytics", { fill: C.blueSoft, stroke: B, titleColor: B, sub: "+ Sentinel (SIEM)", titleSize: 12.5 });
+  // DR
+  s += node(80, 534, 820, 44, "Disaster recovery — geo-replication to South Africa West (paired region) · automated backups · tested DRP", { fill: C.redSoft, stroke: C.red, titleColor: C.red, titleSize: 11.5 });
+  // internal arrows
+  s += arrow(260, 244, 280, 306);
+  s += arrow(720, 244, 380, 306, { color: C.grey });
+  s += arrow(280, 370, 200, 410, { color: C.grey });
+  s += arrow(320, 370, 350, 410, { color: C.grey });
+  s += arrow(360, 370, 500, 410, { color: C.grey });
+  s += arrow(410, 332, 668, 328, { color: C.grey, dash: "5 3" });
+  return { id: "azure-deployment", title: "Figure 9.1 — Azure deployment architecture", w: W, h: H, svg: wrap(W, H, s) };
+}
+
+// 14. Integration architecture (Section 9)
+function integrationArchitecture() {
+  const W = 980, H = 470;
+  let s = txt(W / 2, 34, "Integration Architecture — sources to insight", { size: 19, weight: 700, color: C.blue, anchor: "middle" });
+  const sources = [
+    ["MV90 stats meters", C.blue],
+    ["CC&B billing", C.cyan],
+    ["Works Mgmt (MAXIMO)", C.amber],
+    ["CNL / GIS", C.indigo],
+  ];
+  const sy = 82, sh = 50, sgap = 12;
+  sources.forEach((src, i) => {
+    const y = sy + i * (sh + sgap);
+    s += node(40, y, 180, sh, src[0], { fill: C.light, stroke: src[1], titleColor: src[1], titleSize: 12 });
+    s += arrow(220, y + sh / 2, 300, 214, { color: C.grey, width: 1.4 });
+  });
+  // ESB
+  s += node(300, 120, 180, 190, "API Management / ESB", { fill: C.amberSoft, stroke: C.amber, titleColor: C.amber, sub: "adapters · routing · validation · throttling", titleSize: 13 });
+  s += arrow(480, 214, 540, 214);
+  // FBM platform
+  s += rect(540, 92, 210, 246, { fill: C.white, stroke: C.blue, sw: 1.8, rx: 12 });
+  s += txt(645, 114, "FBM platform", { size: 12, weight: 700, color: C.blue, anchor: "middle" });
+  const fbm = [["Ingestion", C.cyan], ["Validation & exceptions", C.amber], ["Balancing & data stores", C.green]];
+  fbm.forEach((f, i) => {
+    const y = 126 + i * 68;
+    s += node(558, y, 174, 56, f[0], { fill: C.blueSoft, stroke: f[1], titleColor: f[1], titleSize: 12 });
+    if (i < fbm.length - 1) s += arrow(645, y + 56, 645, y + 68, { color: C.grey, width: 1.4 });
+  });
+  s += arrow(750, 214, 800, 214);
+  // outputs
+  const outs = [["BI / corporate reporting", C.green], ["Losses Reduction Potential", C.green], ["Dashboards & heat map", C.blue]];
+  outs.forEach((o, i) => {
+    const y = 120 + i * 66;
+    s += node(800, y, 180, 54, o[0], { fill: C.greenSoft, stroke: o[1], titleColor: o[1], titleSize: 11.5 });
+    if (i !== 1) s += arrow(790, 214, 800, y + 27, { color: C.grey, width: 1.3 });
+  });
+  // monitoring bar
+  s += rect(40, 400, 940, 42, { fill: C.light, stroke: C.grey, sw: 1.4, rx: 10 });
+  s += txt(510, 426, "Centralised monitoring, correlation IDs and audit logging across every integration hop", { size: 11.5, weight: 600, color: C.dark, anchor: "middle" });
+  return { id: "integration-architecture", title: "Figure 9.2 — Integration architecture", w: W, h: H, svg: wrap(W, H, s) };
+}
+
+// 15. Environments, CI/CD & DR (Section 9)
+function environmentsPipeline() {
+  const W = 980, H = 380;
+  let s = txt(W / 2, 34, "Environments, CI/CD & Disaster Recovery", { size: 19, weight: 700, color: C.blue, anchor: "middle" });
+  const y = 118, h = 76, w = 130, gap = 24, startX = 40;
+  const stages = [
+    ["Commit", "developer", C.blueSoft, C.blue],
+    ["Build & SAST", "CI pipeline", C.cyanSoft, C.cyan],
+    ["DEV", "integration", C.indigoSoft, C.indigo],
+    ["TEST / UAT", "DAST · UAT", C.amberSoft, C.amber],
+    ["PROD", "SA North", C.greenSoft, C.green],
+    ["DR", "SA West", C.redSoft, C.red],
+  ];
+  stages.forEach((st, i) => {
+    const x = startX + i * (w + gap);
+    s += node(x, y, w, h, st[0], { fill: st[2], stroke: st[3], titleColor: st[3], sub: st[1], titleSize: 13 });
+    if (i < stages.length - 1) {
+      const dashed = i === stages.length - 2;
+      s += arrow(x + w, y + h / 2, x + w + gap, y + h / 2, dashed ? { color: C.red, dash: "5 3" } : {});
+    }
+  });
+  // approval gate chip between TEST and PROD
+  const gateX = startX + 4 * (w + gap) - gap / 2;
+  s += chip(gateX - 46, y - 34, 92, 22, "approval gate", { fill: C.white, stroke: C.gold, color: C.gold, size: 10 });
+  s += line(gateX, y - 12, gateX, y + h / 2 - 10, { color: C.gold, width: 1.2, dash: "3 3" });
+  // replication label
+  const repX = startX + 5 * (w + gap) - gap / 2;
+  s += txt(repX, y - 16, "geo-replication", { size: 10, color: C.red, weight: 600, anchor: "middle" });
+  // pipeline bar
+  s += rect(40, 250, 924, 46, { fill: C.light, stroke: C.grey, sw: 1.4, rx: 10 });
+  s += txt(502, 278, "Azure DevOps / GitHub Actions — build · automated tests · SAST/DAST · IaC (Bicep/Terraform) · gated release", { size: 11.5, weight: 600, color: C.dark, anchor: "middle" });
+  s += txt(W / 2, H - 16, "Identical, isolated environments promoted through automated quality gates; production continuously protected by a paired-region DR target.", { size: 10.5, color: C.grey, anchor: "middle" });
+  return { id: "environments-pipeline", title: "Figure 9.3 — Environments, CI/CD & DR", w: W, h: H, svg: wrap(W, H, s) };
+}
+
 /* --------------------------------------------------------------- rasterise */
 function rasterize(svg, scale = 2) {
   const resvg = new Resvg(svg, {
@@ -421,6 +632,8 @@ function getDiagrams() {
     logicalArchitecture(), deploymentArchitecture(), dataFlow(),
     deliveryRoadmap(), sprintCycle(), governanceStructure(),
     configWorkflow(), mappingWorkflow(), meterClusterSteps(),
+    securityLayers(), identityFlow(), complianceMatrix(),
+    azureDeployment(), integrationArchitecture(), environmentsPipeline(),
   ];
 }
 
