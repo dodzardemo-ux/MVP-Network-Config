@@ -107,6 +107,43 @@ const sections = [
           { kind: "shot", file: "shot-cluster.png", caption: "Figure 5.9 — Network Mapping (live tool): two meters grouped into a meter cluster, with one-click Ungroup to reverse the grouping." },
         ],
       },
+      {
+        title: "5.4 Mobile Offline Field Audit",
+        intro: [
+          "The SoW requires that the worst-performing feeders can be taken into the field for physical audit and that findings are captured and returned to the source systems. The solution supports an offline-capable mobile workflow so that audits proceed in areas with poor or no connectivity.",
+        ],
+        bullets: [
+          "Export a prioritised worklist of the worst-performing feeders/meters to a mobile device for field audit.",
+          "Capture audit findings, meter conditions, photographs and GPS location while offline.",
+          "On-device data validation to enforce completeness and correctness before submission.",
+          "Automatic, conflict-aware synchronisation and write-back to the source systems once connectivity is restored.",
+          "Full audit trail linking each field finding to the originating feeder, auditor and work order.",
+        ],
+      },
+      {
+        title: "5.5 Substation-Level Balancing and Reporting",
+        intro: [
+          "In addition to feeder-level analysis, the solution provides energy balancing and reporting at substation level, including substations shared across business units, so that losses can be located and attributed accurately across the hierarchy.",
+        ],
+        bullets: [
+          "Energy balancing computed and visualised at substation level as well as feeder level.",
+          "Correct handling of shared substations and feeder-based (rather than substation-based) business boundaries.",
+          "Bulk, reticulation and consolidated views produced as separate, reconcilable reports.",
+          "Substation results published to the BI/corporate reporting layer for downstream consumption.",
+        ],
+      },
+      {
+        title: "5.6 Losses Reduction Potential and National KPI Drill-Down",
+        intro: [
+          "The solution surfaces where intervention will yield the greatest return and lets users navigate results across the full national hierarchy.",
+        ],
+        bullets: [
+          "Losses Reduction Potential tool that ranks networks by the recoverable-loss opportunity to direct field effort.",
+          "National KPI drill-down across the eight levels — Cluster, Operating Unit, Zone, Sector, CNC, and down to feeder and meter.",
+          "Comparison of current versus historical performance over selectable durations, with bar and line visualisations.",
+          "Publication of KPI results to corporate BI and the Losses Reduction Potential tool.",
+        ],
+      },
     ],
   },
   {
@@ -143,6 +180,31 @@ const sections = [
           "Release notes and auditable evidence for each production release.",
         ],
       },
+      {
+        title: "6.2 Data Migration and Take-On Approach",
+        intro: [
+          "The SoW provides for data take-on as and when required. T2 Technologies applies a controlled, repeatable migration method so that data quality is proven before go-live and each run is auditable.",
+        ],
+        bullets: [
+          "Source profiling and data-quality assessment to size and de-risk the migration.",
+          "Documented mapping from source systems to the FBM canonical model, with transformation rules.",
+          "Extract-transform-load pipelines with automated validation, reconciliation and exception reporting.",
+          "Iterative migration rehearsals (mock runs) with sign-off before the production cut-over.",
+          "Reconciliation reports and a rollback position for every run; personal data masked in non-production.",
+        ],
+      },
+      {
+        title: "6.3 Deliverable Breakdown Structure and Acceptance",
+        intro: [
+          "Each priced deliverable is defined, produced and formally accepted before the associated payment milestone is invoiced, matching the tender's deliverable-based acceptance model.",
+        ],
+        bullets: [
+          "A Deliverable Breakdown Structure maps every deliverable to its work package, acceptance criteria and payment milestone (see Section 17.7).",
+          "Each deliverable is reviewed against pre-agreed acceptance criteria before sign-off.",
+          "A Delivery Acceptance Certificate is issued and signed by the Client for each accepted deliverable.",
+          "Only accepted deliverables trigger invoicing, giving the Client clear cost-to-value control.",
+        ],
+      },
     ],
   },
   {
@@ -175,6 +237,30 @@ const sections = [
           "Document versioning and approval records.",
           "Defect prioritisation and transparent closure evidence.",
           "Post-release verification and service health monitoring.",
+        ],
+      },
+      {
+        title: "7.2 Enterprise Architecture Governance Gates",
+        intro: [
+          "The programme aligns to Eskom's Enterprise Architecture governance. Two formal approval gates are respected in addition to the delivery stage gates, and no downstream activity proceeds until the corresponding approval is obtained.",
+        ],
+        bullets: [
+          "Project Architecture Document (PAD) approval is obtained before build commences.",
+          "Pre-Transfer (production readiness) approval is obtained before go-live and handover to operations.",
+          "Architecture and security decisions are logged, with exceptions escalated through the Architecture / Security Review forum.",
+          "Governance evidence is retained to support internal and external audit.",
+        ],
+      },
+      {
+        title: "7.3 Team Competency and Certification",
+        intro: [
+          "T2 Technologies will staff the programme with suitably qualified and experienced resources, and will provide supporting CVs and certificates as returnable evidence.",
+        ],
+        bullets: [
+          "Key roles staffed with a minimum of eight years' relevant experience, as required by the tender.",
+          "Test resources hold ISTQB certification.",
+          "Role-appropriate certifications for cloud, security and architecture disciplines.",
+          "Named CVs, certificates and contactable references provided with the submission.",
         ],
       },
     ],
@@ -348,6 +434,24 @@ const sections = [
         ],
         figures: [{ kind: "diagram", id: "environments-pipeline" }],
       },
+      {
+        title: "9.7 Well-Architected Framework Alignment",
+        intro: [
+          "As required by the SoW, the design is governed by the Microsoft Azure Well-Architected Framework, which provides the reference architecture and review discipline for the solution across its five pillars.",
+        ],
+        table: {
+          head: ["Pillar", "How the FBM solution addresses it"],
+          widths: [0.28, 0.72],
+          rows: [
+            ["Reliability", "Zone-redundant services, paired-region DR, automated backups and tested recovery."],
+            ["Security", "Defence-in-depth, zero-trust access, encryption and continuous monitoring (Section 8)."],
+            ["Cost Optimisation", "Elastic, consumption-based scaling; right-sized environments; IaC to avoid drift and waste."],
+            ["Operational Excellence", "IaC, CI/CD with quality gates, full observability and service management."],
+            ["Performance Efficiency", "Stateless horizontal scaling, caching and separation of operational and reporting workloads."],
+          ],
+        },
+        note: "A formal Well-Architected Review will be conducted during design and at defined checkpoints, with findings tracked to closure through the Architecture / Security Review forum.",
+      },
     ],
     note: "Architecture is presented as a reference design aligned to the SoW's cloud, security and scalability requirements. Target tenant configuration, service selection and non-functional targets (availability, RPO/RTO, performance) must be confirmed with Eskom during discovery.",
   },
@@ -356,34 +460,36 @@ const sections = [
     title: "Commercial Proposal Framework / Pricing Schedule",
     ownership: "Shared — Tumelo / Thabiso",
     intro: [
-      "This section presents a fully costed commercial estimate aligned to the structure of the tender's Pricing Schedule (Annexure L): a software/subscription licence line, itemised implementation work-packages, a professional-services rate card, support & maintenance, a five-year total cost of ownership and a milestone-based payment plan. All figures are in South African Rand and exclude VAT unless stated otherwise.",
-      "The estimate assumes an 18-month implementation of the business requirements followed by managed support & maintenance to the five-year (60-month) mark, delivered by a standard blended team of approximately 8-10 resources. Every currency figure is derived from the rate card and the effort plan below, so the totals reconcile across all tables.",
+      "This section presents a fully costed commercial estimate aligned to the structure of the tender's Pricing Schedule (Annexure L): a software/subscription licence on the SoW's named-user sliding scale, itemised implementation work-packages, a professional-services rate card, five years of support & maintenance, a total cost of ownership and a milestone-based payment plan. All figures are in South African Rand and exclude VAT unless stated otherwise.",
+      "The estimate assumes an 18-month implementation of the business requirements, followed by a full five operational years of managed support & maintenance after go-live (per SoW 6.1), delivered by a standard blended team of approximately 8-10 resources. Licence volumes follow the mandated sliding scale (20 users during implementation, 40 in operational Year 1, 50 in Years 2-5). Every currency figure is derived from the rate card and the effort plan below, so the totals reconcile across all tables.",
     ],
     subsections: [
       {
         title: "17.1 Pricing Basis and Assumptions",
         bullets: [
           "All rates are South African enterprise-IT top-of-band (upper-quartile) benchmark rates (2026), quoted per hour and per day, and must be confirmed against T2 Technologies' actual rate card before submission.",
-          "Prices exclude VAT; VAT at 15% is shown separately in the five-year summary.",
-          `Software is licensed as T2's proprietary SaaS platform on a named-user basis: ${cost.LICENCE.users} users at ${cost.rands(cost.LICENCE.perUserPerMonth)} per user per month.`,
+          "Prices exclude VAT; VAT at 15% is shown separately in the total-cost-of-ownership summary.",
+          `Software is licensed as T2's proprietary SaaS platform on a named-user basis at ${cost.rands(cost.LICENCE.perUserPerMonth)} per user per month, on the SoW-mandated sliding scale (20 users during implementation, 40 in operational Year 1, 50 in Years 2-5).`,
           "The implementation is a fixed-price engagement invoiced against the delivery milestones in 17.7; effort is shown for transparency and change-control.",
-          "Support & maintenance begins at production go-live (a three-month warranty is included in Stabilisation) and runs to the five-year mark.",
+          "Support & maintenance begins at production go-live (a three-month warranty is included in Stabilisation) and runs for a full five operational years, as required by SoW 6.1.",
           "Third-party cloud/hosting, network connectivity, non-standard integrations, hardware and travel/disbursements outside Gauteng are excluded and quoted at cost on confirmation.",
         ],
       },
       {
         title: "17.2 Software / Subscription Licence",
+        intro: [`T2 FBM SaaS named-user licence at ${cost.rands(cost.LICENCE.perUserPerMonth)} per user per month, priced on the SoW-mandated sliding scale.`],
         table: {
-          head: ["Item", "Qty", "Unit Basis", "Annual (excl. VAT)", "5-Year (excl. VAT)"],
-          widths: [0.34, 0.08, 0.24, 0.17, 0.17],
+          head: ["Phase", "Users", "Months", "Annual (excl. VAT)", "Phase Cost (excl. VAT)"],
+          widths: [0.34, 0.1, 0.12, 0.22, 0.22],
           rows: [
-            [
-              "T2 FBM SaaS — named-user licence",
-              String(cost.LICENCE.users),
-              `${cost.rands(cost.LICENCE.perUserPerMonth)} / user / month`,
-              cost.rands(cost.licencePerYear),
-              cost.rands(cost.licenceFiveYear),
-            ],
+            ...cost.licenceSchedule.map((p) => [
+              p.phase,
+              String(p.users),
+              String(p.months),
+              cost.rands(p.perYear),
+              cost.rands(p.cost),
+            ]),
+            ["Total licence (contract term)", "", "", "", cost.rands(cost.licenceTotal)],
           ],
         },
       },
@@ -426,10 +532,11 @@ const sections = [
         note: "Support covers L2/L3 application support, corrective and adaptive maintenance, platform updates and service management under an agreed SLA. Final SLA tiers and support windows to be confirmed with the Client.",
       },
       {
-        title: "17.6 Five-Year Total Cost of Ownership",
+        title: "17.6 Total Cost of Ownership",
+        intro: ["Full contract term: an 18-month implementation phase followed by five operational years of licence and support & maintenance."],
         table: {
-          head: ["Year", "Implementation", "Licence", "Support & Maint.", "Annual Total"],
-          widths: [0.16, 0.22, 0.18, 0.22, 0.22],
+          head: ["Phase", "Implementation", "Licence", "Support & Maint.", "Phase Total"],
+          widths: [0.2, 0.2, 0.18, 0.2, 0.22],
           rows: [
             ...cost.annualProfile.map((r) => [
               r.year,
@@ -438,9 +545,9 @@ const sections = [
               r.support ? cost.rands(r.support) : "—",
               cost.rands(r.total),
             ]),
-            ["Total (excl. VAT)", "", "", "", cost.rands(cost.fiveYearTco)],
-            ["VAT @ 15%", "", "", "", cost.rands(cost.fiveYearTco * cost.VAT_RATE)],
-            ["Total (incl. VAT)", "", "", "", cost.rands(cost.fiveYearTco * (1 + cost.VAT_RATE))],
+            ["Total (excl. VAT)", "", "", "", cost.rands(cost.totalContractValue)],
+            ["VAT @ 15%", "", "", "", cost.rands(cost.totalContractValue * cost.VAT_RATE)],
+            ["Total (incl. VAT)", "", "", "", cost.rands(cost.totalContractValue * (1 + cost.VAT_RATE))],
           ],
         },
       },
