@@ -1,6 +1,7 @@
 "use client";
 
 import { NetworkProvider } from "@/lib/context/network-context";
+import { AuthProvider } from "@/lib/context/auth-context";
 import { NetworkTree } from "@/components/network/network-tree";
 import { DetailsPanel } from "@/components/network/details-panel";
 import { NetworkMappingCanvas } from "@/components/network/network-mapping-canvas";
@@ -8,8 +9,10 @@ import { DashboardPanel } from "@/components/network/dashboard-panel";
 import { StatsMeterPanel } from "@/components/network/stats-meter-panel";
 import { ReportPanel } from "@/components/network/report-panel";
 import { TraceabilityPanel } from "@/components/network/traceability-panel";
+import { SecurityPanel } from "@/components/network/security-panel";
+import { UserMenu } from "@/components/network/user-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Network, Waypoints, LayoutDashboard, RadioTower, FileBarChart, ListChecks } from "lucide-react";
+import { Network, Waypoints, LayoutDashboard, RadioTower, FileBarChart, ListChecks, ShieldCheck } from "lucide-react";
 
 function NetworkConfigContent() {
   return (
@@ -30,9 +33,11 @@ function NetworkConfigContent() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <p className="hidden font-serif text-lg italic text-white md:block">
+            <p className="hidden font-serif text-lg italic text-white lg:block">
               Redefining for a <span className="font-bold not-italic">better future.</span>
             </p>
+            <div className="h-7 w-px bg-white/40" aria-hidden="true" />
+            <UserMenu />
           </div>
         </div>
 
@@ -45,6 +50,7 @@ function NetworkConfigContent() {
               { value: "mapping", label: "Network Mapping", Icon: Waypoints },
               { value: "meters", label: "Stats Meters", Icon: RadioTower },
               { value: "reports", label: "Reports", Icon: FileBarChart },
+              { value: "access", label: "Access & Audit", Icon: ShieldCheck },
               { value: "traceability", label: "Traceability", Icon: ListChecks },
             ].map(({ value, label, Icon }) => (
               <TabsTrigger
@@ -87,6 +93,10 @@ function NetworkConfigContent() {
         <ReportPanel />
       </TabsContent>
 
+      <TabsContent value="access" className="flex-1 m-0 p-6 overflow-auto">
+        <SecurityPanel />
+      </TabsContent>
+
       <TabsContent value="traceability" className="flex-1 m-0 p-6 overflow-auto">
         <TraceabilityPanel />
       </TabsContent>
@@ -96,10 +106,12 @@ function NetworkConfigContent() {
 
 export default function NetworkConfigPage() {
   return (
-    <NetworkProvider>
-      <div className="h-screen flex flex-col bg-background">
-        <NetworkConfigContent />
-      </div>
-    </NetworkProvider>
+    <AuthProvider>
+      <NetworkProvider>
+        <div className="h-screen flex flex-col bg-background">
+          <NetworkConfigContent />
+        </div>
+      </NetworkProvider>
+    </AuthProvider>
   );
 }

@@ -510,7 +510,7 @@ export const traceabilityMatrix: TraceItem[] = [
   { ref: "RQ12/13", requirement: "Report extracts & export (PDF/Excel/CSV)", scoringArea: "Functional", module: "Reporting", tab: "reports", status: "demonstrated" },
   { ref: "RQ19", requirement: "Loss visualisation (geographic heat map)", scoringArea: "Functional", module: "Dashboard", tab: "dashboard", status: "demonstrated" },
   { ref: "RQ20", requirement: "Substation / MTS level balancing", scoringArea: "Functional", module: "Configure Network", tab: "configure", status: "partial" },
-  { ref: "NFR-Sec", requirement: "Role-based access control & audit trail", scoringArea: "Security", module: "Cross-cutting", tab: "traceability", status: "partial" },
+  { ref: "NFR-Sec", requirement: "Role-based access control & audit trail", scoringArea: "Security", module: "Access & Audit", tab: "access", status: "demonstrated" },
   { ref: "NFR-Perf", requirement: "Responsive performance on large hierarchies", scoringArea: "Non-Functional", module: "All modules", tab: "traceability", status: "demonstrated" },
   { ref: "NFR-Cloud", requirement: "Cloud-native deployment architecture", scoringArea: "Cloud", module: "Architecture", tab: "traceability", status: "planned" },
 ];
