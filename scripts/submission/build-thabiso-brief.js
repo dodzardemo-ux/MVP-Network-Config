@@ -180,6 +180,178 @@ const sections = [
     ],
   },
   {
+    n: "8",
+    title: "Security and Compliance",
+    ownership: "Owned by Thabiso",
+    intro: [
+      "Security is treated as a design property of the FBM solution rather than an afterthought. The architecture applies defence-in-depth: independent, mutually reinforcing controls at the perimeter, network, identity, application and data layers, so that the failure of any single control is contained by the layers around it. This section responds to the non-functional security requirements of the Statement of Work (SoW 5.1) and is designed to align with Eskom's information-security standards, which will be confirmed during discovery.",
+      "The controls below describe the intended security posture for the production service. They are stated as design commitments subject to detailed design, Client security standards and the outcome of a joint threat and risk assessment; specific certification scopes are noted as assumptions where relevant.",
+    ],
+    figures: [{ kind: "diagram", id: "security-layers" }],
+    subsections: [
+      {
+        title: "8.1 Security Principles",
+        bullets: [
+          "Secure by design and by default — security requirements are captured in the backlog and verified as part of the Definition of Done.",
+          "Least privilege and need-to-know — access is granted against defined roles and reviewed periodically.",
+          "Defence-in-depth — no single control is relied upon; controls are layered and independent.",
+          "Zero-trust orientation — every request is authenticated, authorised and logged regardless of network location.",
+          "Encryption everywhere — data is protected in transit and at rest across all tiers.",
+          "Segregation of duties and environments — development, test and production are isolated with controlled promotion.",
+        ],
+      },
+      {
+        title: "8.2 Identity and Access Management",
+        intro: [
+          "Authentication federates to Eskom's identity provider so that FBM never holds primary credentials. Every request passes identity, edge and authorisation controls before reaching application services, and each decision — grant or deny — is written to the immutable audit trail already demonstrated in the prototype.",
+        ],
+        bullets: [
+          "Single sign-on via Microsoft Entra ID (Azure AD) with multi-factor authentication enforced for all users.",
+          "Role-based access control mapped to the FBM capability model demonstrated in the application (e.g. view, edit network, manage meters, resolve exceptions, initiate audits, export, view audit log).",
+          "Privileged Identity Management with just-in-time elevation and approval for administrative roles.",
+          "Joiner-Mover-Leaver process integration so access follows the user lifecycle.",
+          "Periodic access recertification and automatic session expiry.",
+        ],
+        figures: [{ kind: "diagram", id: "identity-flow" }],
+      },
+      {
+        title: "8.3 Data Protection and Privacy",
+        bullets: [
+          "Encryption at rest using AES-256 (Transparent Data Encryption for Azure SQL; server-side encryption for storage).",
+          "Encryption in transit using TLS 1.3 for all external and service-to-service traffic.",
+          "Data residency within the Republic of South Africa (Azure South Africa North), addressing data-sovereignty requirements.",
+          "Personally identifiable information masked or de-identified in non-production environments.",
+          "Defined data-classification, retention and secure-disposal policies.",
+          "POPIA-aligned processing, including lawful basis, data-subject rights handling and records of processing.",
+        ],
+      },
+      {
+        title: "8.4 Application and Platform Security",
+        bullets: [
+          "Secure SDLC with threat modelling, secure-coding standards and mandatory peer review.",
+          "Static and dynamic application security testing (SAST/DAST) and software-composition analysis in the CI/CD pipeline.",
+          "Container image scanning and hardened, patched base images.",
+          "Secrets and keys held in Azure Key Vault — never in source control or configuration files.",
+          "Web Application Firewall, DDoS protection and rate limiting at the edge.",
+          "Independent penetration testing before every major production release and periodically thereafter.",
+        ],
+      },
+      {
+        title: "8.5 Monitoring, Audit and Incident Response",
+        bullets: [
+          "Centralised logging and SIEM via Azure Monitor, Log Analytics and Microsoft Sentinel.",
+          "Immutable, tamper-evident audit trail of security-relevant events (demonstrated in the prototype's Access & Audit module).",
+          "Real-time alerting on anomalous authentication, authorisation and data-access events.",
+          "Documented incident-response runbooks with defined severities and escalation paths.",
+          "POPIA breach-notification handling within the regulated timeframe, with e-discovery support.",
+          "Regular control testing, log review and continuous-improvement feedback into the backlog.",
+        ],
+      },
+      {
+        title: "8.6 Compliance and Standards Alignment",
+        intro: [
+          "The solution is designed to support the following frameworks. The matrix shows which control domains each framework informs; certification scope and supporting evidence are to be confirmed with T2 Technologies and the Client.",
+        ],
+        figures: [{ kind: "diagram", id: "compliance-matrix" }],
+        table: {
+          head: ["Framework", "Relevance to FBM"],
+          widths: [0.34, 0.66],
+          rows: [
+            ["POPIA (South Africa)", "Primary data-protection law governing processing of personal information."],
+            ["ISO/IEC 27001", "Information Security Management System baseline for controls and governance."],
+            ["ISO/IEC 27017 & 27018", "Cloud-specific security controls and protection of PII in the cloud."],
+            ["SOC 2 Type II", "Independent attestation of security, availability and confidentiality controls."],
+            ["GDPR", "Applied as good practice for privacy-by-design and data-subject rights."],
+            ["NIST Cybersecurity Framework", "Structures the overall posture: Identify, Protect, Detect, Respond, Recover."],
+            ["Cybercrimes Act & King IV", "South African statutory and governance context for security and oversight."],
+          ],
+        },
+        note: "Where T2 Technologies does not currently hold a specific certification, the commitment is to operate in alignment with the standard and to pursue certification within a timeframe agreed with the Client. All items are subject to confirmation during discovery.",
+      },
+    ],
+  },
+  {
+    n: "9",
+    title: "Architecture Deep-Dive",
+    ownership: "Owned by Thabiso",
+    intro: [
+      "This section expands the solution architecture in Section 5 into an implementable, cloud-native target for deployment into Eskom's Microsoft Azure tenant, with all data resident in South Africa. The design favours composable, containerised microservices, an API-first integration model and elastic scaling, so the platform can grow from the demonstrated prototype to a national roll-out without re-architecture.",
+      "The specific Azure services named below are a reference design. Final service selection, sizing, region pairing and landing-zone configuration will be confirmed with Eskom's cloud and security teams during discovery.",
+    ],
+    figures: [{ kind: "diagram", id: "azure-deployment" }],
+    subsections: [
+      {
+        title: "9.1 Azure Landing Zone and Hosting",
+        bullets: [
+          "Deployment into an Eskom-governed Azure landing zone with policy, RBAC and cost guardrails.",
+          "Primary region Azure South Africa North (Johannesburg) for data sovereignty.",
+          "Resource segregation by environment and workload using subscriptions and resource groups.",
+          "Infrastructure as Code (Bicep or Terraform) for repeatable, auditable provisioning.",
+          "Private networking by default — virtual networks, network security groups, Azure Firewall and private endpoints.",
+        ],
+      },
+      {
+        title: "9.2 Application Architecture",
+        bullets: [
+          "Composable microservices packaged as containers on AKS or Azure App Service.",
+          "Stateless services that scale horizontally behind Azure Front Door and API Management.",
+          "API-first design with versioned, documented contracts between services and channels.",
+          "Event-driven ingestion for MV90 and other feeds, decoupled via queues for resilience.",
+          "Autoscaling driven by demand, with graceful degradation under load.",
+        ],
+      },
+      {
+        title: "9.3 Data Architecture",
+        bullets: [
+          "Azure SQL (Business Critical, zone-redundant) as the operational store with Transparent Data Encryption.",
+          "Separation of operational data from reporting/analytics data to protect transactional performance.",
+          "Azure Storage/Blob for the integration store, imported files and generated report extracts.",
+          "Azure Cache for sessions, rate-limiting state and hot lookups.",
+          "Defined retention, archiving and point-in-time restore aligned to Client policy.",
+        ],
+      },
+      {
+        title: "9.4 Integration Architecture",
+        intro: [
+          "FBM integrates with upstream systems of record through a managed integration layer using a canonical data model, so that source-system change is absorbed by adapters rather than propagated into the core.",
+        ],
+        bullets: [
+          "API Management / Enterprise Service Bus (iPaaS) mediates all inbound and outbound integration.",
+          "Source adapters for MV90 stats meters, CC&B billing, Works Management (e.g. MAXIMO) and CNL/GIS.",
+          "Batch and near-real-time patterns with idempotent processing and dead-letter queues.",
+          "Outbound publication to BI/corporate reporting and the Losses Reduction Potential tool.",
+          "Correlation identifiers propagated across every hop for end-to-end traceability.",
+        ],
+        figures: [{ kind: "diagram", id: "integration-architecture" }],
+      },
+      {
+        title: "9.5 Scalability, Availability and Disaster Recovery",
+        bullets: [
+          "Horizontal autoscaling of stateless services and zone-redundant data services for high availability.",
+          "Target availability, RPO and RTO to be agreed and underpinned by the SLA.",
+          "Geo-replication to the paired region (Azure South Africa West) for disaster recovery.",
+          "Automated, encrypted backups with regular restore testing.",
+          "A documented, regularly tested Disaster Recovery Plan (DRP).",
+        ],
+      },
+      {
+        title: "9.6 Environments and DevOps",
+        intro: [
+          "Identical, isolated environments are promoted through an automated pipeline with quality and security gates, giving predictable, auditable releases.",
+        ],
+        bullets: [
+          "Separate DEV, TEST/UAT, staging and PROD environments provisioned from the same IaC.",
+          "CI/CD via Azure DevOps or GitHub Actions with build, automated test, SAST/DAST and release gates.",
+          "Manual approval gate before production promotion, with full release evidence.",
+          "Blue-green or canary release strategy to minimise deployment risk.",
+          "Observability (metrics, logs, traces) wired in from day one.",
+        ],
+        figures: [{ kind: "diagram", id: "environments-pipeline" }],
+      },
+    ],
+    note: "Architecture is presented as a reference design aligned to the SoW's cloud, security and scalability requirements. Target tenant configuration, service selection and non-functional targets (availability, RPO/RTO, performance) must be confirmed with Eskom during discovery.",
+  },
+  {
     n: "17",
     title: "Commercial Proposal Framework / Pricing Schedule",
     ownership: "Shared — Tumelo / Thabiso",
